@@ -1,0 +1,189 @@
+﻿[ClosedView_QzpcTWVzIERvY3VtZW50c1xEZXZcUmV0cm9GaXhcTWFpbi5wYXM=]
+Module=C:\Mes Documents\Dev\RetroFix\Main.pas
+CursorX=62
+CursorY=423
+TopLine=388
+LeftCol=1
+Bookmarks=
+EditViewName=C:\Mes Documents\Dev\RetroFix\Main.pas
+
+[ClosedView_QzpcTWVzIERvY3VtZW50c1xEZXZcUmV0cm9GaXhcQ29uc3RhbnRlcy5wYXM=]
+Module=C:\Mes Documents\Dev\RetroFix\Constantes.pas
+CursorX=95
+CursorY=98
+TopLine=85
+LeftCol=1
+Bookmarks=
+EditViewName=C:\Mes Documents\Dev\RetroFix\Constantes.pas
+
+[ClosedView_QzpcTWVzIERvY3VtZW50c1xEZXZcUmV0cm9GaXhcVHlwZXMucGFz]
+Module=C:\Mes Documents\Dev\RetroFix\Types.pas
+CursorX=39
+CursorY=85
+TopLine=70
+LeftCol=1
+Bookmarks=
+EditViewName=C:\Mes Documents\Dev\RetroFix\Types.pas
+
+[ClosedView_QzpcTWVzIERvY3VtZW50c1xEZXZcUmV0cm9GaXhcQmlvc0V4dHJhY3Rvci5wYXM=]
+Module=C:\Mes Documents\Dev\RetroFix\BiosExtractor.pas
+CursorX=69
+CursorY=37
+TopLine=28
+LeftCol=1
+Bookmarks=
+EditViewName=C:\Mes Documents\Dev\RetroFix\BiosExtractor.pas
+
+[ClosedView_QzpcTWVzIERvY3VtZW50c1xEZXZcUmV0cm9GaXhcQmlvc1BhcnNlci5wYXM=]
+Module=C:\Mes Documents\Dev\RetroFix\BiosParser.pas
+CursorX=32
+CursorY=13
+TopLine=1
+LeftCol=1
+Bookmarks=
+EditViewName=C:\Mes Documents\Dev\RetroFix\BiosParser.pas
+
+[ClosedView_QzpcTWVzIERvY3VtZW50c1xEZXZcUmV0cm9GaXhcQmlvc0NoZWNrZXIucGFz]
+Module=C:\Mes Documents\Dev\RetroFix\BiosChecker.pas
+CursorX=72
+CursorY=33
+TopLine=35
+LeftCol=1
+Bookmarks=
+EditViewName=C:\Mes Documents\Dev\RetroFix\BiosChecker.pas
+
+[ClosedView_QzpcTWVzIERvY3VtZW50c1xEZXZcUmV0cm9GaXhcSGFzaFV0aWxzLnBhcw==]
+Module=C:\Mes Documents\Dev\RetroFix\HashUtils.pas
+CursorX=72
+CursorY=38
+TopLine=17
+LeftCol=1
+Bookmarks=
+EditViewName=C:\Mes Documents\Dev\RetroFix\HashUtils.pas
+
+[ClosedView_QzpcTWVzIERvY3VtZW50c1xEZXZcUmV0cm9GaXhcQmlvc0RldGFpbHMucGFz]
+Module=C:\Mes Documents\Dev\RetroFix\BiosDetails.pas
+CursorX=71
+CursorY=64
+TopLine=4
+LeftCol=1
+Bookmarks=
+EditViewName=
+
+[ClosedView_QzpcTWVzIERvY3VtZW50c1xEZXZcUmV0cm9GaXhcUmV0cm9GaXguZHBy]
+Module=C:\Mes Documents\Dev\RetroFix\RetroFix.dpr
+CursorX=1
+CursorY=1
+TopLine=1
+LeftCol=1
+Bookmarks=
+EditViewName=
+[ClosedView_YzpccHJvZ3JhbSBmaWxlcyAoeDg2KVxlbWJhcmNhZGVyb1xzdHVkaW9cMjMuMFxTT1VSQ0VcUlRM
+XFNZU1xTeXN0ZW0ucGFz]
+Module=c:\program files (x86)\embarcadero\studio\23.0\SOURCE\RTL\SYS\System.pas
+CursorX=1
+CursorY=26267
+TopLine=26242
+LeftCol=1
+Bookmarks=
+EditViewName=
+
+[ClosedView_QzpcTWVzIERvY3VtZW50c1xEZXZcUmV0cm9GaXhcQmlvc0V4cG9ydC5wYXM=]
+Module=C:\Mes Documents\Dev\RetroFix\BiosExport.pas
+CursorX=74
+CursorY=30
+TopLine=10
+LeftCol=1
+Bookmarks=
+EditViewName=C:\Mes Documents\Dev\RetroFix\BiosExport.pas
+
+[ClosedView_QzpcTWVzIERvY3VtZW50c1xEZXZcUmV0cm9GaXhcQmlvc1V0aWxzLnBhcw==]
+Module=C:\Mes Documents\Dev\RetroFix\BiosUtils.pas
+CursorX=53
+CursorY=11
+TopLine=1
+LeftCol=1
+Bookmarks=
+EditViewName=C:\Mes Documents\Dev\RetroFix\BiosUtils.pas
+
+[ClosedView_QzpcTWVzIERvY3VtZW50c1xEZXZcUmV0cm9GaXhcR2FtZWxpc3RQYXJzZXIucGFz]
+Module=C:\Mes Documents\Dev\RetroFix\GamelistParser.pas
+CursorX=20
+CursorY=16
+TopLine=1
+LeftCol=1
+Bookmarks=
+EditViewName=C:\Mes Documents\Dev\RetroFix\GamelistParser.pas
+
+[ClosedView_QzpcTWVzIERvY3VtZW50c1xEZXZcUmV0cm9GaXhcR2FtZWxpc3RDaGVja2VyLnBhcw==]
+Module=C:\Mes Documents\Dev\RetroFix\GamelistChecker.pas
+CursorX=54
+CursorY=108
+TopLine=85
+LeftCol=1
+Bookmarks=
+EditViewName=C:\Mes Documents\Dev\RetroFix\GamelistChecker.pas
+[ClosedView_YzpccHJvZ3JhbSBmaWxlcyAoeDg2KVxlbWJhcmNhZGVyb1xzdHVkaW9cMjMuMFxTT1VSQ0VcUlRM
+XFNZU1xTeXN0ZW0ucGFz]
+Module=c:\program files (x86)\embarcadero\studio\23.0\SOURCE\RTL\SYS\System.pas
+CursorX=1
+CursorY=22464
+TopLine=22439
+LeftCol=1
+Bookmarks=
+EditViewName=c:\program files (x86)\embarcadero\studio\23.0\SOURCE\RTL\SYS\System.pas
+[ClosedView_YzpccHJvZ3JhbSBmaWxlcyAoeDg2KVxlbWJhcmNhZGVyb1xzdHVkaW9cMjMuMFxTT1VSQ0VcUlRM
+XFNZU1xTeXN0ZW0ucGFz]
+Module=c:\program files (x86)\embarcadero\studio\23.0\SOURCE\RTL\SYS\System.pas
+CursorX=1
+CursorY=22464
+TopLine=22439
+LeftCol=1
+Bookmarks=
+EditViewName=
+[ClosedView_YzpccHJvZ3JhbSBmaWxlcyAoeDg2KVxlbWJhcmNhZGVyb1xzdHVkaW9cMjMuMFxTT1VSQ0VcUlRM
+XFNZU1xTeXN0ZW0uVmFyaWFudHMucGFz]
+Module=c:\program files (x86)\embarcadero\studio\23.0\SOURCE\RTL\SYS\System.Variants.pas
+CursorX=1
+CursorY=3409
+TopLine=3384
+LeftCol=1
+Bookmarks=
+EditViewName=c:\program files (x86)\embarcadero\studio\23.0\SOURCE\RTL\SYS\System.Variants.pas
+[ClosedView_YzpccHJvZ3JhbSBmaWxlcyAoeDg2KVxlbWJhcmNhZGVyb1xzdHVkaW9cMjMuMFxTT1VSQ0VcUlRM
+XFNZU1xTeXN0ZW0uVmFyaWFudHMucGFz]
+Module=c:\program files (x86)\embarcadero\studio\23.0\SOURCE\RTL\SYS\System.Variants.pas
+CursorX=1
+CursorY=3409
+TopLine=3333
+LeftCol=1
+Bookmarks=
+EditViewName=
+[ClosedView_YzpccHJvZ3JhbSBmaWxlcyAoeDg2KVxlbWJhcmNhZGVyb1xzdHVkaW9cMjMuMFxTT1VSQ0VcUlRM
+XFNZU1xTeXN0ZW0uVmFyaWFudHMucGFz]
+Module=c:\program files (x86)\embarcadero\studio\23.0\SOURCE\RTL\SYS\System.Variants.pas
+CursorX=1
+CursorY=3304
+TopLine=3279
+LeftCol=1
+Bookmarks=
+EditViewName=c:\program files (x86)\embarcadero\studio\23.0\SOURCE\RTL\SYS\System.Variants.pas
+
+[ClosedView_QzpcTWVzIERvY3VtZW50c1xEZXZcUmV0cm9GaXhcR2FtZWxpc3REZXRhaWxzLnBhcw==]
+Module=C:\Mes Documents\Dev\RetroFix\GamelistDetails.pas
+CursorX=38
+CursorY=156
+TopLine=193
+LeftCol=1
+Bookmarks=
+EditViewName=C:\Mes Documents\Dev\RetroFix\GamelistDetails.pas
+[ClosedView_YzpccHJvZ3JhbSBmaWxlcyAoeDg2KVxlbWJhcmNhZGVyb1xzdHVkaW9cMjMuMFxTT1VSQ0VcUlRM
+XFNZU1xTeXN0ZW0ucGFz]
+Module=c:\program files (x86)\embarcadero\studio\23.0\SOURCE\RTL\SYS\System.pas
+CursorX=1
+CursorY=22464
+TopLine=22439
+LeftCol=1
+Bookmarks=
+EditViewName=c:\program files (x86)\embarcadero\studio\23.0\SOURCE\RTL\SYS\System.pas
+
