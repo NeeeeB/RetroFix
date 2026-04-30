@@ -1,6 +1,6 @@
 # RetroFix 🎮
 
-**Fix your games collection for Retrobat**
+**Fix your game collection for Retrobat**
 
 RetroFix is a utility for [Retrobat](https://www.retrobat.org/) that scans your installation and helps you identify and fix issues in your game collection — missing BIOS files, unscraped ROMs, missing or orphaned media files, and more.
 

@@ -3,7 +3,7 @@ object frmMain: TfrmMain
   Top = 0
   BorderIcons = [biSystemMenu, biMinimize]
   BorderStyle = bsSingle
-  Caption = 'Retrofix - Fix your games collection'
+  Caption = 'Retrofix - Fix your game collection'
   ClientHeight = 461
   ClientWidth = 545
   Color = clBtnFace
@@ -222,12 +222,14 @@ object frmMain: TfrmMain
     object lblProgress: TLabel
       Left = 0
       Top = 8
-      Width = 32
-      Height = 15
+      Width = 545
+      Height = 22
       Align = alClient
       Alignment = taCenter
       Caption = 'Ready'
       Layout = tlCenter
+      ExplicitWidth = 32
+      ExplicitHeight = 15
     end
     object progressBar: TProgressBar
       AlignWithMargins = True
