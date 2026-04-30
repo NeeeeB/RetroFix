@@ -33,6 +33,7 @@ type
       mniOpenFolder: TMenuItem;
       mniDeleteOrphan: TMenuItem;
       mniAddMissingMedia: TMenuItem;
+      mniCopyExpectedHash: TMenuItem;
       procedure FormCreate( Sender: TObject );
       procedure cbxSystemsChange( Sender: TObject );
       procedure pgcMainMouseMove( Sender: TObject; Shift: TShiftState; X, Y: Integer );
@@ -45,6 +46,7 @@ type
       procedure mniDeleteOrphanClick(Sender: TObject);
       procedure popActionsPopup(Sender: TObject);
       procedure mniAddMissingMediaClick(Sender: TObject);
+      procedure mniCopyExpectedHashClick(Sender: TObject);
 
    private
       FResults: TObjectList<TGamelistResult>;
@@ -80,6 +82,7 @@ uses
    System.IOUtils,
    System.Threading,
    Vcl.Dialogs,
+   Vcl.Clipbrd,
    Winapi.CommCtrl,
    Winapi.ShellAPI,
    HashUtils;
@@ -162,13 +165,25 @@ end;
 
 procedure TfrmGamelistDetails.popActionsPopup(Sender: TObject);
 begin
+   var _lv:= pgcMain.ActivePage.Controls[0] as TListView;
+
+   if ( pgcMain.ActivePage = tbsOrphans ) then
+      mniOpenFolder.Enabled:= ( _lv.Selected <> nil ) and
+                              ( _lv.Selected.Data <> nil ) and
+                              ( _lv.SelCount = 1 )
+   else
+      mniOpenFolder.Enabled:= ( _lv.Selected <> nil ) and
+                              ( _lv.Selected.Data <> nil );
+
    mniDeleteOrphan.Visible:= ( pgcMain.ActivePage = tbsOrphans ) and
-                             ( lvwOrphans.Selected <> nil ) and
-                             ( lvwOrphans.Selected.Data <> nil );
+                             ( lvwOrphans.Selected <> nil );
 
    mniAddMissingMedia.Visible:= ( pgcMain.ActivePage = tbsMissingMedias ) and
                                 ( lvwMissingMedias.Selected <> nil ) and
                                 ( lvwMissingMedias.Selected.Data <> nil );
+
+   mniCopyExpectedHash.Visible:= ( pgcMain.ActivePage = tbsHashMismatch ) and
+                                 ( lvwHashMismatch.Selected <> nil );
 end;
 
 procedure TfrmGamelistDetails.populateComboBox;
@@ -239,6 +254,13 @@ begin
                            _item.SubItems.Add( LowerCase( _g.md5 ) );
                            _item.SubItems.Add( _actualMD5 );
                            _item.SubItems.Add( 'MD5' );
+                           var _ref:= TGameEntryRef.Create;
+                           _ref.systemName:= _r.systemName;
+                           _ref.gameName:= _g.name;
+                           _ref.romPath:= _g.romPath;
+                           _ref.gamelistResult:= _r;
+                           FGameEntryRefs.Add( _ref );
+                           _item.Data:= _ref;
                         end );
                   end;
 
@@ -257,6 +279,13 @@ begin
                            _item.SubItems.Add( LowerCase( _g.crc32 ) );
                            _item.SubItems.Add( _actualCRC32 );
                            _item.SubItems.Add( 'CRC32' );
+                           var _ref:= TGameEntryRef.Create;
+                           _ref.systemName:= _r.systemName;
+                           _ref.gameName:= _g.name;
+                           _ref.romPath:= _g.romPath;
+                           _ref.gamelistResult:= _r;
+                           FGameEntryRefs.Add( _ref );
+                           _item.Data:= _ref;
                         end );
                   end;
 
@@ -573,8 +602,9 @@ begin
    var _ext:= TPath.GetExtension( _targetPath );
    var _dlg:= TOpenDialog.Create( Self );
    try
-      _dlg.Title:= rstOpenDlgCaption+' ' + _ref.gameName;
-      _dlg.Filter:= 'Media files (*' + _ext + ')|*' + _ext + '|All files (*.*)|*.*';
+      _dlg.Title:= rstOpenDlgCaption+' '+_ref.gameName+
+                   ' '+rstWillBeSavedAs+' '+TPath.GetFileName( _targetPath )+')';
+      _dlg.Filter:= 'Media files (*'+_ext+')|*'+_ext+'|All files (*.*)|*.*';
       _dlg.FileName:= '';
       if ( _dlg.Execute ) then begin
          Screen.Cursor:= crHourGlass;
@@ -606,32 +636,54 @@ begin
    end;
 end;
 
+procedure TfrmGamelistDetails.mniCopyExpectedHashClick( Sender: TObject );
+begin
+   if ( lvwHashMismatch.Selected = nil ) then
+      Exit;
+   var _hash:= lvwHashMismatch.Selected.SubItems[2];
+   if ( not _hash.IsEmpty ) then
+      Clipboard.AsText:= _hash;
+end;
+
 procedure TfrmGamelistDetails.mniDeleteOrphanClick( Sender: TObject );
 begin
-   if ( lvwOrphans.Selected = nil ) or
-      ( lvwOrphans.Selected.Data = nil ) then
+   if ( lvwOrphans.SelCount = 0 ) then
       Exit;
-   var _ref:= TGameEntryRef( lvwOrphans.Selected.Data );
-   if ( MessageDlg( rstDelete+' ' + TPath.GetFileName( _ref.mediaPath ) + ' ?',
+
+   if ( MessageDlg( Format( rstDeleteOrphans, [lvwOrphans.SelCount] ),
                     mtConfirmation, [mbYes, mbNo], 0 ) = mrNo ) then
       Exit;
-   if ( TFile.Exists( _ref.mediaPath ) ) then begin
-      TFile.Delete( _ref.mediaPath );
-      // Update FResults directly via reference
-      var _list:= TList<string>.Create;
-      try
-         for var s in _ref.gamelistResult.orphanMedias do
-            if ( s <> _ref.mediaPath ) then
-               _list.Add( s );
-         _ref.gamelistResult.orphanMedias:= _list.ToArray;
-      finally
-         _list.Free;
+
+   Screen.Cursor:= crHourGlass;
+   try
+      var _item:= lvwOrphans.Selected;
+      while ( _item <> nil ) do begin
+         var _next:= lvwOrphans.GetNextItem( _item, sdAll, [isSelected] );
+         if ( _item.Data <> nil ) then begin
+            var _ref:= TGameEntryRef( _item.Data );
+            if ( TFile.Exists( _ref.mediaPath ) ) then begin
+               TFile.Delete( _ref.mediaPath );
+               var _list:= TList<string>.Create;
+               try
+                  for var s in _ref.gamelistResult.orphanMedias do
+                     if ( s <> _ref.mediaPath ) then
+                        _list.Add( s );
+                  _ref.gamelistResult.orphanMedias:= _list.ToArray;
+               finally
+                  _list.Free;
+               end;
+               _item.Free;
+            end;
+         end;
+         _item:= _next;
       end;
-      lvwOrphans.Selected.Free;
-      tbsOrphans.Caption:= Format( rstOrphansNb, [lvwOrphans.Items.Count] );
-      if Assigned( FOnSummaryUpdate ) then
-         FOnSummaryUpdate( Self );
+   finally
+      Screen.Cursor:= crDefault;
    end;
+
+   tbsOrphans.Caption:= Format( rstOrphansNb, [lvwOrphans.Items.Count] );
+   if Assigned( FOnSummaryUpdate ) then
+      FOnSummaryUpdate( Self );
 end;
 
 procedure TfrmGamelistDetails.mniOpenFolderClick( Sender: TObject );

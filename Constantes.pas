@@ -54,6 +54,8 @@ resourcestring
    rstConfirmHashVerification = 'Hash verification can take a long time depending on ROM sizes. Continue ?';
    rstDelete = 'Delete';
    rstOpenDlgCaption = 'Select media file for';
+   rstWillBeSavedAs = '(will be saved as:';
+   rstDeleteOrphans = 'Delete %d selected orphan file(s) ?';
 
 const
    cstMargin = 5;

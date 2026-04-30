@@ -233,6 +233,7 @@ object frmGamelistDetails: TfrmGamelistDetails
             Caption = 'File path'
             Width = 600
           end>
+        MultiSelect = True
         GroupView = True
         ReadOnly = True
         RowSelect = True
@@ -298,12 +299,16 @@ object frmGamelistDetails: TfrmGamelistDetails
       OnClick = mniOpenFolderClick
     end
     object mniDeleteOrphan: TMenuItem
-      Caption = 'Delete orphan'
+      Caption = 'Delete orphan(s)'
       OnClick = mniDeleteOrphanClick
     end
     object mniAddMissingMedia: TMenuItem
       Caption = 'Add media'
       OnClick = mniAddMissingMediaClick
+    end
+    object mniCopyExpectedHash: TMenuItem
+      Caption = 'Copy expected hash'
+      OnClick = mniCopyExpectedHashClick
     end
   end
 end
