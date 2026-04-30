@@ -3,10 +3,11 @@
 interface
 
 uses
+   System.Generics.Collections,
    Winapi.Windows, System.SysUtils, System.Classes,
    Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.StdCtrls,
    Vcl.ComCtrls, Vcl.ExtCtrls,
-   Types, Constantes;
+   Types, Constantes, Vcl.Menus;
 
 type
    TfrmGamelistDetails = class( TForm )
@@ -28,18 +29,30 @@ type
       btnVerifyHashes: TButton;
       tbsHashMismatch: TTabSheet;
       lvwHashMismatch: TListView;
+      popActions: TPopupMenu;
+      mniOpenFolder: TMenuItem;
+      mniDeleteOrphan: TMenuItem;
+      mniAddMissingMedia: TMenuItem;
       procedure FormCreate( Sender: TObject );
       procedure cbxSystemsChange( Sender: TObject );
       procedure pgcMainMouseMove( Sender: TObject; Shift: TShiftState; X, Y: Integer );
       procedure btnVerifyHashesClick(Sender: TObject);
       procedure FormClose(Sender: TObject; var Action: TCloseAction);
       procedure FormDestroy(Sender: TObject);
+      procedure lvMouseMove( Sender: TObject; Shift: TShiftState; X, Y: Integer );
+      procedure lvContextPopup( Sender: TObject; MousePos: TPoint; var Handled: Boolean );
+      procedure mniOpenFolderClick(Sender: TObject);
+      procedure mniDeleteOrphanClick(Sender: TObject);
+      procedure popActionsPopup(Sender: TObject);
+      procedure mniAddMissingMediaClick(Sender: TObject);
 
    private
-      FResults: TArray<TGamelistResult>;
+      FResults: TObjectList<TGamelistResult>;
       FCancelled, FFormDestroyed: Boolean;
       FComputing: Boolean;
       FPreviousSystemIndex: Integer;
+      FGameEntryRefs: TObjectList<TGameEntryRef>;
+      FOnSummaryUpdate: TNotifyevent;
       procedure populateComboBox;
       procedure populateListViews;
       procedure populateMissingRoms( const aResults: TArray<TGamelistResult> );
@@ -54,7 +67,8 @@ type
       procedure updateStats( const aResults: TArray<TGamelistResult> );
 
    public
-      procedure setResults( const aResults: TArray<TGamelistResult> );
+      property OnSummaryUpdate: TNotifyEvent read FOnSummaryUpdate write FOnSummaryUpdate;
+      procedure setResults( aResults: TObjectList<TGamelistResult> );
 
    end;
 
@@ -67,6 +81,7 @@ uses
    System.Threading,
    Vcl.Dialogs,
    Winapi.CommCtrl,
+   Winapi.ShellAPI,
    HashUtils;
 
 {$R *.dfm}
@@ -76,6 +91,7 @@ begin
    cbxSystems.Items.Clear;
    FComputing:= False;
    FPreviousSystemIndex:= 0;
+   FGameEntryRefs:= TObjectlist<TGameEntryRef>.Create( True );
 end;
 
 procedure TfrmGamelistDetails.FormClose( Sender: TObject; var Action: TCloseAction );
@@ -91,9 +107,10 @@ procedure TfrmGamelistDetails.FormDestroy(Sender: TObject);
 begin
    FCancelled:= True;
    FFormDestroyed:= True;
+   FGameEntryRefs.Free;
 end;
 
-procedure TfrmGamelistDetails.setResults( const aResults: TArray<TGamelistResult> );
+procedure TfrmGamelistDetails.setResults( aResults: TObjectList<TGamelistResult> );
 begin
    FResults:= aResults;
    populateComboBox;
@@ -104,6 +121,15 @@ procedure TfrmGamelistDetails.pgcMainMouseMove( Sender: TObject;
                                                 Shift: TShiftState;
                                                 X, Y: Integer );
 begin
+   // Only show hints when mouse is in the tab header area
+   var _tabRect: TRect;
+   Winapi.Windows.SendMessage( pgcMain.Handle, TCM_GETITEMRECT,
+                               0, LPARAM( @_tabRect ) );
+   if ( Y > _tabRect.Bottom ) then begin
+      pgcMain.Hint:= '';
+      Exit;
+   end;
+
    for var ii:= 0 to Pred( pgcMain.PageCount ) do begin
       var _rect: TRect;
       Winapi.Windows.SendMessage( pgcMain.Handle, TCM_GETITEMRECT,
@@ -117,6 +143,32 @@ begin
       end;
    end;
    pgcMain.Hint:= '';
+end;
+
+procedure TfrmGamelistDetails.lvMouseMove( Sender: TObject;
+                                           Shift: TShiftState;
+                                           X, Y: Integer );
+begin
+   pgcMain.Hint:= '';
+end;
+
+procedure TfrmGamelistDetails.lvContextPopup( Sender: TObject;
+                                              MousePos: TPoint;
+                                              var Handled: Boolean );
+begin
+   var _lv:= Sender as TListView;
+   Handled:= ( _lv.Selected = nil );
+end;
+
+procedure TfrmGamelistDetails.popActionsPopup(Sender: TObject);
+begin
+   mniDeleteOrphan.Visible:= ( pgcMain.ActivePage = tbsOrphans ) and
+                             ( lvwOrphans.Selected <> nil ) and
+                             ( lvwOrphans.Selected.Data <> nil );
+
+   mniAddMissingMedia.Visible:= ( pgcMain.ActivePage = tbsMissingMedias ) and
+                                ( lvwMissingMedias.Selected <> nil ) and
+                                ( lvwMissingMedias.Selected.Data <> nil );
 end;
 
 procedure TfrmGamelistDetails.populateComboBox;
@@ -137,7 +189,7 @@ function TfrmGamelistDetails.getFilteredResults: TArray<TGamelistResult>;
 begin
    // Index 0 = All systems
    if ( cbxSystems.ItemIndex <= 0 ) then
-      Exit( FResults );
+      Exit( FResults.ToArray );
    // Filter by selected system
    var _systemName:= cbxSystems.Items[cbxSystems.ItemIndex];
    SetLength( Result, 0 );
@@ -148,6 +200,10 @@ end;
 
 procedure TfrmGamelistDetails.btnVerifyHashesClick( Sender: TObject );
 begin
+   if ( MessageDlg( rstConfirmHashVerification,
+                    mtConfirmation, [mbYes, mbNo], 0 ) ) = mrNo then
+      Exit;
+
    Screen.Cursor:= crHourGlass;
    btnVerifyHashes.Enabled:= False;
    btnVerifyHashes.Caption:= rstComputing;
@@ -265,6 +321,7 @@ end;
 
 procedure TfrmGamelistDetails.populateListViews;
 begin
+   FGameEntryRefs.Clear;
    var _filtered:= getFilteredResults;
    populateMissingRoms( _filtered );
    populateUnscraped( _filtered );
@@ -319,6 +376,13 @@ begin
                end;
             _item.SubItems.Add( _gameName );
             _item.SubItems.Add( _path );
+            var _ref:= TGameEntryRef.Create;
+            _ref.systemName:= _r.systemName;
+            _ref.gameName:= _gameName;
+            _ref.romPath:= _path;
+            _ref.gamelistResult:= _r;
+            FGameEntryRefs.Add( _ref );
+            _item.Data:= _ref;
             if ( cbxSystems.ItemIndex = 0 ) then
                _item.GroupID:= getOrCreateGroup( lvwMissingRoms, _r.systemName );
          end;
@@ -341,6 +405,12 @@ begin
             var _item:= lvwUnscraped.Items.Add;
             _item.Caption:= _r.systemName;
             _item.SubItems.Add( _path );
+            var _ref:= TGameEntryRef.Create;
+            _ref.systemName:= _r.systemName;
+            _ref.romPath:= _path;
+            _ref.gamelistResult:= _r;
+            FGameEntryRefs.Add( _ref );
+            _item.Data:= _ref;
             if ( cbxSystems.ItemIndex = 0 ) then
                _item.GroupID:= getOrCreateGroup( lvwUnscraped, _r.systemName );
          end;
@@ -367,6 +437,14 @@ begin
                   _item.SubItems.Add( _g.name );
                   _item.SubItems.Add( mediaTypeToStr( _m.mediaType ) );
                   _item.SubItems.Add( _m.path );
+                  var _ref:= TGameEntryRef.Create;
+                  _ref.systemName:= _r.systemName;
+                  _ref.gameName:= _g.name;
+                  _ref.romPath:= _g.romPath;
+                  _ref.mediaPath:= _m.path;
+                  _ref.gamelistResult:= _r;
+                  FGameEntryRefs.Add( _ref );
+                  _item.Data:= _ref;
                   if ( cbxSystems.ItemIndex = 0 ) then
                      _item.GroupID:= getOrCreateGroup( lvwMissingMedias, _r.systemName );
                end;
@@ -389,6 +467,12 @@ begin
             var _item:= lvwOrphans.Items.Add;
             _item.Caption:= _r.systemName;
             _item.SubItems.Add( _path );
+            var _ref:= TGameEntryRef.Create;
+            _ref.systemName:= _r.systemName;
+            _ref.mediaPath:= _path;
+            _ref.gamelistResult:= _r;
+            FGameEntryRefs.Add( _ref );
+            _item.Data:= _ref;
             if ( cbxSystems.ItemIndex = 0 ) then
                _item.GroupID:= getOrCreateGroup( lvwOrphans, _r.systemName );
          end;
@@ -413,6 +497,13 @@ begin
                _item.Caption:= _r.systemName;
                _item.SubItems.Add( _g.name );
                _item.SubItems.Add( _g.romPath );
+               var _ref:= TGameEntryRef.Create;
+               _ref.systemName:= _r.systemName;
+               _ref.gameName:= _g.name;
+               _ref.romPath:= _g.romPath;
+               _ref.gamelistResult:= _r;
+               FGameEntryRefs.Add( _ref );
+               _item.Data:= _ref;
                if ( cbxSystems.ItemIndex = 0 ) then
                   _item.GroupID:= getOrCreateGroup( lvwNoMedia, _r.systemName );
             end;
@@ -470,6 +561,94 @@ begin
    else
       Result:= '?';
    end;
+end;
+
+procedure TfrmGamelistDetails.mniAddMissingMediaClick( Sender: TObject );
+begin
+   if ( lvwMissingMedias.Selected = nil ) or
+      ( lvwMissingMedias.Selected.Data = nil ) then
+      Exit;
+   var _ref:= TGameEntryRef( lvwMissingMedias.Selected.Data );
+   var _targetPath:= _ref.mediaPath;
+   var _ext:= TPath.GetExtension( _targetPath );
+   var _dlg:= TOpenDialog.Create( Self );
+   try
+      _dlg.Title:= rstOpenDlgCaption+' ' + _ref.gameName;
+      _dlg.Filter:= 'Media files (*' + _ext + ')|*' + _ext + '|All files (*.*)|*.*';
+      _dlg.FileName:= '';
+      if ( _dlg.Execute ) then begin
+         Screen.Cursor:= crHourGlass;
+         try
+            var _targetDir:= TPath.GetDirectoryName( _targetPath );
+            if ( not TDirectory.Exists( _targetDir ) ) then
+               TDirectory.CreateDirectory( _targetDir );
+            TFile.Copy( _dlg.FileName, _targetPath, False );
+            // Update FResults directly via reference
+            var _list:= TList<string>.Create;
+            try
+               for var s in _ref.gamelistResult.missingMedias do
+                  if ( s <> _ref.mediaPath ) then
+                     _list.Add( s );
+               _ref.gamelistResult.missingMedias:= _list.ToArray;
+            finally
+               _list.Free;
+            end;
+            lvwMissingMedias.Selected.Free;
+            tbsMissingMedias.Caption:= Format( rstMissingMediasNb, [lvwMissingMedias.Items.Count] );
+            if Assigned( FOnSummaryUpdate ) then
+               FOnSummaryUpdate( Self );
+         finally
+            Screen.Cursor:= crDefault;
+         end;
+      end;
+   finally
+      _dlg.Free;
+   end;
+end;
+
+procedure TfrmGamelistDetails.mniDeleteOrphanClick( Sender: TObject );
+begin
+   if ( lvwOrphans.Selected = nil ) or
+      ( lvwOrphans.Selected.Data = nil ) then
+      Exit;
+   var _ref:= TGameEntryRef( lvwOrphans.Selected.Data );
+   if ( MessageDlg( rstDelete+' ' + TPath.GetFileName( _ref.mediaPath ) + ' ?',
+                    mtConfirmation, [mbYes, mbNo], 0 ) = mrNo ) then
+      Exit;
+   if ( TFile.Exists( _ref.mediaPath ) ) then begin
+      TFile.Delete( _ref.mediaPath );
+      // Update FResults directly via reference
+      var _list:= TList<string>.Create;
+      try
+         for var s in _ref.gamelistResult.orphanMedias do
+            if ( s <> _ref.mediaPath ) then
+               _list.Add( s );
+         _ref.gamelistResult.orphanMedias:= _list.ToArray;
+      finally
+         _list.Free;
+      end;
+      lvwOrphans.Selected.Free;
+      tbsOrphans.Caption:= Format( rstOrphansNb, [lvwOrphans.Items.Count] );
+      if Assigned( FOnSummaryUpdate ) then
+         FOnSummaryUpdate( Self );
+   end;
+end;
+
+procedure TfrmGamelistDetails.mniOpenFolderClick( Sender: TObject );
+begin
+   var _lv:= pgcMain.ActivePage.Controls[0] as TListView;
+   if ( _lv.Selected = nil ) or
+      ( _lv.Selected.Data = nil ) then
+      Exit;
+   var _ref:= TGameEntryRef( _lv.Selected.Data );
+   var _path:= _ref.romPath;
+   if ( _path.IsEmpty ) then
+      _path:= _ref.mediaPath;
+   if ( _path.IsEmpty ) then
+      Exit;
+   var _folder:= TPath.GetDirectoryName( _path );
+   if ( TDirectory.Exists( _folder ) ) then
+      ShellExecute( Handle, 'open', PChar( _folder ), nil, nil, SW_SHOWNORMAL );
 end;
 
 procedure TfrmGamelistDetails.updateStats( const aResults: TArray<TGamelistResult> );

@@ -4,6 +4,7 @@ interface
 
 uses
    System.Diagnostics,
+   System.Generics.Collections,
    Winapi.Windows, System.SysUtils, System.Classes, Vcl.Graphics,
    Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.Menus, Vcl.StdCtrls,
    Vcl.ExtCtrls, Vcl.Skia,
@@ -48,6 +49,7 @@ type
       procedure onBiosRescan(Sender: TObject; const aOptions: TScanOptions);
       procedure onBiosDetailsClose( Sender: TObject; var Action: TCloseAction );
       procedure onGamelistDetailsClose( Sender: TObject; var Action: TCloseAction );
+      procedure onGamelistSummaryUpdate( Sender: TObject );
       procedure btnScanGamelistsClick(Sender: TObject);
       procedure FormShow(Sender: TObject);
       procedure btnGamelistScanDetailsClick(Sender: TObject);
@@ -58,7 +60,7 @@ type
       FBiosResults: TArray<TBiosResult>;
       FLoading: Boolean;
       FBiosDetails: TfrmBiosDetails;
-      FGamelistResults: TArray<TGamelistResult>;
+      FGamelistResults: TObjectList<TGamelistResult>;
       FGamelistDetails: TfrmGamelistDetails;
       function tryAndLoadSettings: Boolean;
       function retrobatFolderValidation( const aFolderPath: string ): TValidFolder;
@@ -69,7 +71,7 @@ type
       function computeSummary( const aResults: TArray<TBiosResult> ): TBiosSummary;
       procedure displaySummary( const aSummary: TBiosSummary );
       procedure onBiosProgress( const aSystem, aFile: string; aCurrent, aTotal: Integer );
-      function computeGamelistSummary( const aResults: TArray<TGamelistResult> ): TGamelistSummary;
+      function computeGamelistSummary( aResults: TObjectList<TGamelistResult> ): TGamelistSummary;
       procedure displayGamelistSummary( const aSummary: TGamelistSummary );
       procedure onGamelistProgress( const aSystem: string; aCurrent, aTotal: Integer );
 
@@ -132,9 +134,10 @@ end;
 
 procedure TfrmMain.btnGamelistScanDetailsClick( Sender: TObject );
 begin
-   if FGamelistDetails = nil then begin
+   if ( FGamelistDetails = nil ) then begin
       FGamelistDetails:= TfrmGamelistDetails.Create( Self );
       FGamelistDetails.OnClose:= onGamelistDetailsClose;
+      FGamelistDetails.OnSummaryUpdate:= onGamelistSummaryUpdate;
    end;
    FGamelistDetails.setResults( FGamelistResults );
    FGamelistDetails.Show;
@@ -145,6 +148,11 @@ procedure TfrmMain.onGamelistDetailsClose( Sender: TObject; var Action: TCloseAc
 begin
    Action:= caFree;
    FGamelistDetails:= nil;
+end;
+
+procedure TfrmMain.onGamelistSummaryUpdate( Sender: TObject );
+begin
+   displayGamelistSummary( computeGamelistSummary( FGamelistResults ) );
 end;
 
 procedure TfrmMain.btnSaveSettingsClick(Sender: TObject);
@@ -293,6 +301,7 @@ begin
       lblGamelistScanResult.Font.Color:= clGray;
       try
          var _romsDir:= TPath.Combine( FSettings.retrobatPath, cstRomsFolder );
+         FGamelistResults.Free;
          FGamelistResults:= checkGamelists( _romsDir, onGamelistProgress );
          displayGamelistSummary( computeGamelistSummary( FGamelistResults ) );
          btnGamelistScanDetails.Enabled:= True;
@@ -316,7 +325,7 @@ begin
    Application.ProcessMessages;
 end;
 
-function TfrmMain.computeGamelistSummary( const aResults: TArray<TGamelistResult> ): TGamelistSummary;
+function TfrmMain.computeGamelistSummary( aResults: TObjectList<TGamelistResult> ): TGamelistSummary;
 begin
    Result:= Default( TGamelistSummary );
    for var _r in aResults do begin
@@ -426,6 +435,7 @@ end;
 procedure TfrmMain.FormDestroy(Sender: TObject);
 begin
    FSettings.Free;
+   FGamelistResults.Free;
 end;
 
 end.

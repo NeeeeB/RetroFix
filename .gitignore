@@ -80,6 +80,8 @@ __recovery/
 # Boss dependency manager vendor folder https://github.com/HashLoad/boss
 modules/
 
+# MISC
+.dsv
 Win64/
 Win32/
 Output/

@@ -33,6 +33,42 @@ type
       forceExtract: Boolean;
    end;
 
+   TGameMedia = record
+      mediaType: TMediaType;
+      path: string;
+      exists: Boolean;
+   end;
+
+   TGameEntry = record
+      id: string;
+      name: string;
+      romPath: string;
+      md5: string;
+      crc32: string;
+      medias: TArray<TGameMedia>;
+      isScraped: Boolean;
+   end;
+
+   TGamelistResult = class
+      systemName: string;
+      romDir: string;
+      totalRoms: Integer;
+      games: TArray<TGameEntry>;
+      missingROMs: TArray<string>;
+      unscrapedROMs: TArray<string>;
+      orphanMedias: TArray<string>;
+      missingMedias: TArray<string>
+   end;
+
+   TGameEntryRef = class
+   public
+      systemName: string;
+      gameName: string;
+      romPath: string;
+      mediaPath: string;
+      gamelistResult: TGameListResult;
+   end;
+
    TScanOptions = record
       forceExtract: Boolean;
       strictMode: Boolean;
@@ -74,33 +110,6 @@ type
       presentNoHash: Integer;
       md5Mismatch: Integer;
       missing: Integer;
-   end;
-
-   TGameMedia = record
-      mediaType: TMediaType;
-      path: string;
-      exists: Boolean;
-   end;
-
-   TGameEntry = record
-      id: string;
-      name: string;
-      romPath: string;
-      md5: string;
-      crc32: string;
-      medias: TArray<TGameMedia>;
-      isScraped: Boolean;
-   end;
-
-   TGamelistResult = record
-      systemName: string;
-      romDir: string;
-      totalRoms: Integer;
-      games: TArray<TGameEntry>;
-      missingROMs: TArray<string>;
-      unscrapedROMs: TArray<string>;
-      orphanMedias: TArray<string>;
-      missingMedias: TArray<string>
    end;
 
    TGamelistSummary = record

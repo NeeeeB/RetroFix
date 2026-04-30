@@ -48,6 +48,12 @@ resourcestring
    rstCancelHashVerification = 'Hash verification is running. Cancel it ?';
    rstNoHashMismatch = 'No hash mismatch found !';
    rstHashMismatch = 'ROM files with a hash mismatch between gamelist and actual file';
+   rstNoFolderSelected = '● No folder selected';
+   rstRetrobatExeFound = '● Retrobat.exe found';
+   rstRetrobatExeNotFound = '● Retrobat.exe not found';
+   rstConfirmHashVerification = 'Hash verification can take a long time depending on ROM sizes. Continue ?';
+   rstDelete = 'Delete';
+   rstOpenDlgCaption = 'Select media file for';
 
 const
    cstMargin = 5;
@@ -100,9 +106,9 @@ const
       ( clGray, clGreen, clRed );
 
    cstValidFolderStrings: array[TValidFolder] of string =
-      ( '● No folder selected',
-        '● Retrobat.exe found',
-        '● Retrobat.exe not found' );
+      ( rstNoFolderSelected,
+        rstRetrobatExeFound,
+        rstRetrobatExeNotFound );
 
    cstMediaTypeTags: array[TMediaType] of string =
       ( cstXmlImage,

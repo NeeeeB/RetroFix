@@ -62,7 +62,7 @@ object frmGamelistDetails: TfrmGamelistDetails
     Top = 35
     Width = 900
     Height = 565
-    ActivePage = tbsHashMismatch
+    ActivePage = tbsMissingRoms
     Align = alClient
     ParentShowHint = False
     ShowHint = True
@@ -95,8 +95,13 @@ object frmGamelistDetails: TfrmGamelistDetails
         GroupView = True
         ReadOnly = True
         RowSelect = True
+        ParentShowHint = False
+        PopupMenu = popActions
+        ShowHint = False
         TabOrder = 0
         ViewStyle = vsReport
+        OnContextPopup = lvContextPopup
+        OnMouseMove = lvMouseMove
       end
     end
     object tbsUnscraped: TTabSheet
@@ -123,8 +128,13 @@ object frmGamelistDetails: TfrmGamelistDetails
         GroupView = True
         ReadOnly = True
         RowSelect = True
+        ParentShowHint = False
+        PopupMenu = popActions
+        ShowHint = False
         TabOrder = 0
         ViewStyle = vsReport
+        OnContextPopup = lvContextPopup
+        OnMouseMove = lvMouseMove
       end
     end
     object tbsMissingMedias: TTabSheet
@@ -158,8 +168,13 @@ object frmGamelistDetails: TfrmGamelistDetails
         GroupView = True
         ReadOnly = True
         RowSelect = True
+        ParentShowHint = False
+        PopupMenu = popActions
+        ShowHint = False
         TabOrder = 0
         ViewStyle = vsReport
+        OnContextPopup = lvContextPopup
+        OnMouseMove = lvMouseMove
       end
     end
     object tbsNoMedia: TTabSheet
@@ -189,8 +204,13 @@ object frmGamelistDetails: TfrmGamelistDetails
         GroupView = True
         ReadOnly = True
         RowSelect = True
+        ParentShowHint = False
+        PopupMenu = popActions
+        ShowHint = False
         TabOrder = 0
         ViewStyle = vsReport
+        OnContextPopup = lvContextPopup
+        OnMouseMove = lvMouseMove
       end
     end
     object tbsOrphans: TTabSheet
@@ -216,8 +236,13 @@ object frmGamelistDetails: TfrmGamelistDetails
         GroupView = True
         ReadOnly = True
         RowSelect = True
+        ParentShowHint = False
+        PopupMenu = popActions
+        ShowHint = False
         TabOrder = 0
         ViewStyle = vsReport
+        OnContextPopup = lvContextPopup
+        OnMouseMove = lvMouseMove
       end
     end
     object tbsHashMismatch: TTabSheet
@@ -254,9 +279,31 @@ object frmGamelistDetails: TfrmGamelistDetails
           end>
         ReadOnly = True
         RowSelect = True
+        ParentShowHint = False
+        PopupMenu = popActions
+        ShowHint = False
         TabOrder = 0
         ViewStyle = vsReport
+        OnContextPopup = lvContextPopup
+        OnMouseMove = lvMouseMove
       end
+    end
+  end
+  object popActions: TPopupMenu
+    OnPopup = popActionsPopup
+    Left = 800
+    Top = 496
+    object mniOpenFolder: TMenuItem
+      Caption = 'Open folder'
+      OnClick = mniOpenFolderClick
+    end
+    object mniDeleteOrphan: TMenuItem
+      Caption = 'Delete orphan'
+      OnClick = mniDeleteOrphanClick
+    end
+    object mniAddMissingMedia: TMenuItem
+      Caption = 'Add media'
+      OnClick = mniAddMissingMediaClick
     end
   end
 end
