@@ -49,6 +49,7 @@ function parseGamelistFast( const aRomDir: string;
    end;
 
 begin
+   Result:= TGamelistResult.Create;
    Result.systemName:= aSystemName;
    Result.romDir:= aRomDir;
    Result.totalRoms:= 0;

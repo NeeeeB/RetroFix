@@ -81,7 +81,7 @@ __recovery/
 modules/
 
 # MISC
-.dsv
+*.dsv
 Win64/
 Win32/
 Output/
