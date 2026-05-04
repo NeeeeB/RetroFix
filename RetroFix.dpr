@@ -16,7 +16,10 @@ uses
   BiosUtils in 'BiosUtils.pas',
   GamelistParser in 'GamelistParser.pas',
   GamelistChecker in 'GamelistChecker.pas',
-  GamelistDetails in 'GamelistDetails.pas' {Form2};
+  GamelistDetails in 'GamelistDetails.pas' {Form2},
+  ScreenScraperApi in 'ScreenScraperApi.pas',
+  EsSettingsReader in 'EsSettingsReader.pas',
+  Settings in 'Settings.pas' {Form3};
 
 {$R *.res}
 

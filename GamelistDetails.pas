@@ -51,7 +51,7 @@ type
    private
       FResults: TObjectList<TGamelistResult>;
       FCancelled, FFormDestroyed: Boolean;
-      FComputing: Boolean;
+      FComputing, FSSAvailable: Boolean;
       FPreviousSystemIndex: Integer;
       FGameEntryRefs: TObjectList<TGameEntryRef>;
       FOnSummaryUpdate: TNotifyevent;
@@ -70,6 +70,7 @@ type
 
    public
       property OnSummaryUpdate: TNotifyEvent read FOnSummaryUpdate write FOnSummaryUpdate;
+      property SSAvailable: Boolean read FSSAvailable write FSSAvailable;
       procedure setResults( aResults: TObjectList<TGamelistResult> );
 
    end;

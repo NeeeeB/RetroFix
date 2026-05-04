@@ -23,7 +23,7 @@ type
       lblValidSelectedFolder: TLabel;
       gbxActions: TGroupBox;
       imageList: TImageList;
-      btnSaveSettings: TButton;
+      btnSettings: TButton;
       gbxBios: TGroupBox;
       btnScanBios: TButton;
       chkForceExtract: TCheckBox;
@@ -40,7 +40,6 @@ type
       procedure FormCreate(Sender: TObject);
       procedure FormDestroy(Sender: TObject);
       procedure btnSelectFolderClick(Sender: TObject);
-      procedure btnSaveSettingsClick(Sender: TObject);
       procedure edtRetrobatPathChange(Sender: TObject);
       procedure btnScanBiosClick(Sender: TObject);
       procedure chkStrictModeClick(Sender: TObject);
@@ -53,15 +52,18 @@ type
       procedure btnScanGamelistsClick(Sender: TObject);
       procedure FormShow(Sender: TObject);
       procedure btnGamelistScanDetailsClick(Sender: TObject);
+      procedure btnSettingsClick(Sender: TObject);
 
    private
       FStopWatch: TStopwatch;
       FSettings: TSettings;
       FBiosResults: TArray<TBiosResult>;
-      FLoading: Boolean;
+      FLoading, FSSAvailable: Boolean;
       FBiosDetails: TfrmBiosDetails;
       FGamelistResults: TObjectList<TGamelistResult>;
       FGamelistDetails: TfrmGamelistDetails;
+      FSSUserInfo: TSSUserInfo;
+      FSSSystemsMapping: TDictionary<string, Integer>;
       function tryAndLoadSettings: Boolean;
       function retrobatFolderValidation( const aFolderPath: string ): TValidFolder;
       function getBaseFolder: string;
@@ -74,6 +76,7 @@ type
       function computeGamelistSummary( aResults: TObjectList<TGamelistResult> ): TGamelistSummary;
       procedure displayGamelistSummary( const aSummary: TGamelistSummary );
       procedure onGamelistProgress( const aSystem: string; aCurrent, aTotal: Integer );
+      procedure initSSCredentials;
 
    end;
 
@@ -88,7 +91,10 @@ uses
    BiosExtractor,
    BiosParser,
    BiosChecker,
-   GamelistChecker;
+   GamelistChecker,
+   EsSettingsReader,
+   Settings,
+   ScreenScraperApi;
 
 {$R *.dfm}
 
@@ -109,6 +115,52 @@ begin
       finally
          FLoading:= False;
       end;
+   end;
+end;
+
+procedure TfrmMain.initSSCredentials;
+begin
+   // If not already defined in settings, try to get them from es_settings.cfg
+   if FSettings.ssUserId.IsEmpty then begin
+      if not readEsSettings( FSettings.retrobatPath, FSettings ) then begin
+         // Not found in ES settings, ask user
+         var _userId:= '';
+         if InputQuery( 'ScreenScraper', rstSSUsername, _userId ) then begin
+            var _pwd:= '';
+            if InputQuery( 'ScreenScraper', rstSSPassword, _pwd ) then begin
+               FSettings.ssUserId:= _userId;
+               FSettings.ssPassword:= _pwd;
+            end;
+         end;
+      end;
+   end;
+
+   // Ensure language has a fallback
+   if ( FSettings.scrapeLanguage.IsEmpty ) then
+      FSettings.scrapeLanguage:= cstDefaultLanguage;
+
+   FSSAvailable:= ( not FSettings.ssUserId.IsEmpty ) and
+                  ( not FSettings.ssPassword.IsEmpty );
+
+   if ( not FSSAvailable ) then begin
+      ShowMessage( rstSSCredentialsMissing );
+      Exit;
+   end;
+
+   // Load SS data
+   var _err: string;
+   if ( not getUserInfo( FSettings.ssUserId, FSettings.ssPassword,
+                         FSSUserInfo, _err ) ) then begin
+      FSSAvailable:= False;
+      ShowMessage( rstSSConnectionFailed + _err );
+      Exit;
+   end;
+
+   FSSSystemsMapping.Free;
+   if ( not loadSystemsMapping( FSettings.ssUserId, FSettings.ssPassword,
+                                FSSSystemsMapping, _err ) ) then begin
+      FSSAvailable:= False;
+      ShowMessage( rstSSSystemMappingFailed + _err );
    end;
 end;
 
@@ -138,6 +190,7 @@ begin
       FGamelistDetails:= TfrmGamelistDetails.Create( Self );
       FGamelistDetails.OnClose:= onGamelistDetailsClose;
       FGamelistDetails.OnSummaryUpdate:= onGamelistSummaryUpdate;
+      FGamelistDetails.SSAvailable:= FSSAvailable;
    end;
    FGamelistDetails.setResults( FGamelistResults );
    FGamelistDetails.Show;
@@ -155,11 +208,6 @@ begin
    displayGamelistSummary( computeGamelistSummary( FGamelistResults ) );
 end;
 
-procedure TfrmMain.btnSaveSettingsClick(Sender: TObject);
-begin
-   TFile.WriteAllText( getSettingsFilePath, TJson.ObjectToJsonString( FSettings ) );
-end;
-
 procedure TfrmMain.btnSelectFolderClick( Sender: TObject );
 begin
    if fileOpenDialog.Execute then begin
@@ -168,6 +216,22 @@ begin
       var _valid:= retrobatFolderValidation( edtRetrobatPath.Text );
       gbxActions.Enabled:= ( _valid = vfValid );
       setLabelTextAndColor( _valid );
+   end;
+end;
+
+procedure TfrmMain.btnSettingsClick( Sender: TObject );
+begin
+   var _frm:= TfrmSettings.Create( Self );
+   try
+      _frm.loadSettings( FSettings );
+      if ( _frm.ShowModal = mrOK ) then begin
+         FSSAvailable:= ( not FSettings.ssUserId.IsEmpty ) and
+                        ( not FSettings.ssPassword.IsEmpty );
+         if ( Assigned( FGamelistDetails ) ) then
+            FGamelistDetails.SSAvailable:= FSSAvailable;
+      end;
+   finally
+      _frm.Free;
    end;
 end;
 
@@ -219,9 +283,10 @@ end;
 
 function TfrmMain.retrobatFolderValidation( const aFolderPath: string ): TValidFolder;
 begin
-   if FileExists( TPath.Combine( aFolderPath, cstRetrobatExeFilename ) ) then
-      Result:= vfValid
-   else
+   if FileExists( TPath.Combine( aFolderPath, cstRetrobatExeFilename ) ) then begin
+      Result:= vfValid;
+      initSSCredentials;
+   end else
       Result:= vfInvalid;
 end;
 
@@ -434,8 +499,10 @@ end;
 
 procedure TfrmMain.FormDestroy(Sender: TObject);
 begin
+   TFile.WriteAllText( getSettingsFilePath, TJson.ObjectToJsonString( FSettings ) );
    FSettings.Free;
    FGamelistResults.Free;
+   FSSSystemsMapping.Free;
 end;
 
 end.
