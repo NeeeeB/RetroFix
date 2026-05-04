@@ -6,44 +6,24 @@ uses
    System.Generics.Collections,
    Types;
 
-function parseGamelistFast( const aRomDir: string;
-                            const aSystemName: string ): TGamelistResult;
+function parseGamelist( const aRomDir: string;
+                        const aSystemName: string ): TGamelistResult;
 
 implementation
 
 uses
-   System.SysUtils, System.IOUtils,
-   System.StrUtils,
-   System.NetEncoding,
-   Constantes;
+   System.SysUtils,
+   System.IOUtils,
+   Constantes,
+   Neslib.Xml;
 
-function parseGamelistFast( const aRomDir: string;
-                            const aSystemName: string ): TGamelistResult;
-
-   function extractTag( const aContent: string;
-                     const aTag: string;
-                     const aFrom: Integer ): string;
-   begin
-      var _open:= '<'+aTag+'>';
-      var _close:= '</'+aTag+'>';
-      var _start:= PosEx( _open, aContent, aFrom );
-      if ( _start = 0 ) then
-         Exit( '' );
-      Inc( _start, Length( _open ) );
-      var _end:= PosEx( _close, aContent, _start );
-      if ( _end = 0 ) then
-         Exit( '' );
-      var _extracted:= Copy( aContent, _start, _end - _start );
-      if ( Pos( '&', _extracted ) > 0 ) then
-         Result:= TNetEncoding.HTML.Decode( _extracted )
-      else
-         Result:= _extracted;
-   end;
+function parseGamelist( const aRomDir: string;
+                        const aSystemName: string ): TGamelistResult;
 
    function resolveRelativePath( const aBasePath, aRelativePath: string ): string;
    begin
       var _clean:= aRelativePath;
-      if _clean.StartsWith( './' ) then
+      if ( _clean.StartsWith( './' ) ) then
          _clean:= _clean.Substring( 2 );
       Result:= TPath.Combine( aBasePath, _clean.Replace( '/', '\' ) );
    end;
@@ -63,72 +43,74 @@ begin
    if ( not TFile.Exists( _gamelistPath ) ) then
       Exit;
 
-   // Read entire file at once
-   var _content:= TFile.ReadAllText( _gamelistPath, TEncoding.UTF8 );
-
-   // Find each <game> block
-   var _gameOpen:= cstXmlGameTagOpen;
-   var _gameClose:= cstXmlGameTagClose;
-   var _pos:= 1;
+   var _doc:= TXmlDocument.Create;
+   _doc.Load( _gamelistPath );
+   var _root:= _doc.DocumentElement;
+   if ( _root.IsEmpty ) then
+      Exit;
 
    var _games:= TList<TGameEntry>.Create;
    try
-      repeat
-         // Find start of game block
-         var _gameStart:= PosEx( _gameOpen, _content, _pos );
-         if ( _gameStart = 0 ) then
-            Break;
+      var _gameNode:= _root.FirstChild;
+      while ( not _gameNode.IsEmpty ) do begin
+         if ( _gameNode.NodeType = TXmlNodeType.Element ) and
+            ( _gameNode.Value = cstXmlGame ) then begin
 
-         // Find end of opening tag (to skip attributes like id="...")
-         var _tagEnd:= PosEx( '>', _content, _gameStart );
-         if ( _tagEnd = 0 ) then
-            Break;
+            var _entry:= Default( TGameEntry );
 
-         // Find end of game block
-         var _gameEnd:= PosEx( _gameClose, _content, _tagEnd );
-         if ( _gameEnd = 0 ) then
-            Break;
+            // Extract id attribute
+            var _idAttr:= _gameNode.AttributeByName( cstXmlId );
+            if ( not _idAttr.Value.IsEmpty ) then
+               _entry.id:= _idAttr.Value;
 
-         // Extract game block content
-         var _gameContent:= Copy( _content, _tagEnd+1, _gameEnd - _tagEnd - 1 );
+            // Parse child nodes
+            var _child:= _gameNode.FirstChild;
+            while ( not _child.IsEmpty ) do begin
+               if ( _child.NodeType = TXmlNodeType.Element ) then begin
+                  var _tag:= _child.Value;
+                  var _text:= _child.Text;
 
-         // Extract id from opening tag
-         var _entry:= Default( TGameEntry );
-         var _openTag:= Copy( _content, _gameStart, _tagEnd - _gameStart + 1 );
-         var _idPos:= PosEx( 'id="', _openTag, 1 );
-         if ( _idPos > 0 ) then begin
-            Inc( _idPos, 4 );
-            var _idEnd:= PosEx( '"', _openTag, _idPos );
-            if ( _idEnd > 0 ) then
-               _entry.id:= Copy( _openTag, _idPos, _idEnd - _idPos );
-         end;
-
-         // Extract name and path
-         _entry.name:= extractTag( _gameContent, cstXmlName, 1 );
-         var _romRelPath:= extractTag( _gameContent, cstXmlPath, 1 );
-         if ( not _romRelPath.IsEmpty ) then
-            _entry.romPath:= resolveRelativePath( aRomDir, _romRelPath );
-         _entry.md5:= extractTag( _gameContent, cstXmlMD5, 1 );
-         _entry.crc32:= extractTag( _gameContent, cstXmlHash, 1 );
-
-         // Extract medias
-         for var mt:= Low( TMediaType ) to High( TMediaType ) do begin
-            var _value:= extractTag( _gameContent, cstMediaTypeTags[mt], 1 );
-            if ( not _value.IsEmpty ) then begin
-               var _media: TGameMedia;
-               _media.mediaType:= mt;
-               _media.path:= resolveRelativePath( aRomDir, _value );
-               _media.exists:= TFile.Exists( _media.path );
-               _entry.medias:= _entry.medias+[_media];
-               _entry.isScraped:= True;
+                  if ( _tag = cstXmlName ) then
+                     _entry.name:= _text
+                  else if ( _tag = cstXmlPath ) then begin
+                     if ( not _text.IsEmpty ) then
+                        _entry.romPath:= resolveRelativePath( aRomDir, _text );
+                  end else if ( _tag = cstXmlMD5 ) then
+                     _entry.md5:= _text
+                  else if ( _tag = cstXmlHash ) then _entry.crc32:= _text
+                  else if ( _tag = cstXmlDesc ) then _entry.desc:= _text
+                  else if ( _tag = cstXmlGenre ) then _entry.genre:= _text
+                  else if ( _tag = cstXmlRating ) then _entry.rating:= _text
+                  else if ( _tag = cstXmlReleaseDate ) then _entry.releaseDate:= _text
+                  else if ( _tag = cstXmlDeveloper ) then _entry.developer:= _text
+                  else if ( _tag = cstXmlPublisher ) then _entry.publisher:= _text
+                  else if ( _tag = cstXmlFamily ) then _entry.family:= _text
+                  else if ( _tag = cstXmlArcadeSystem ) then _entry.arcadeSystem:= _text
+                  else if ( _tag = cstXmlPlayers ) then _entry.players:= _text
+                  else if ( _tag = cstXmlLang ) then _entry.lang:= _text
+                  else if ( _tag = cstXmlRegion ) then _entry.region:= _text
+                  else begin
+                     for var mt:= Low( TMediaType ) to High( TMediaType ) do begin
+                        if ( _tag = cstMediaTypeTags[mt] ) and
+                           ( not _text.IsEmpty ) then begin
+                           var _media: TGameMedia;
+                           _media.mediaType:= mt;
+                           _media.path:= resolveRelativePath( aRomDir, _text );
+                           _media.exists:= TFile.Exists( _media.path );
+                           _entry.medias:= _entry.medias+[_media];
+                           _entry.isScraped:= True;
+                           Break;
+                        end;
+                     end;
+                  end;
+               end;
+               _child:= _child.NextSibling;
             end;
+
+            _games.Add( _entry );
          end;
-
-         _games.Add( _entry );
-
-         // Move past this game block
-         _pos:= _gameEnd + Length( _gameClose );
-      until ( _pos >= Length( _content ) );
+         _gameNode:= _gameNode.NextSibling;
+      end;
 
       Result.games:= _games.ToArray;
    finally

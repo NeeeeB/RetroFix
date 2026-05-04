@@ -39,6 +39,14 @@ RetroFix is a utility for [Retrobat](https://www.retrobat.org/) that scans your 
 
 ---
 
+## ScreenScraper credentials
+
+To use the scraping features, rename `screenscraper_credentials.inc.template` 
+to `screenscraper_credentials.inc` and fill in your developer credentials 
+from [screenscraper.fr](https://www.screenscraper.fr).
+
+---
+
 ## Usage
 
 1. Launch RetroFix

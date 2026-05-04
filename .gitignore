@@ -85,3 +85,4 @@ modules/
 Win64/
 Win32/
 Output/
+screenscraper_credentials.inc

@@ -72,7 +72,7 @@ begin
       if ( not TFile.Exists( _gamelistPath ) ) then
          Continue;
 
-      var _result:= parseGamelistFast( _systemDir, _systemName );
+      var _result:= parseGamelist( _systemDir, _systemName );
 
       // Build dictionary of referenced ROM paths for O(1) lookup
       var _referencedROMs:= TDictionary<string, Boolean>.Create;

@@ -40,13 +40,24 @@ type
    end;
 
    TGameEntry = record
-      id: string;
-      name: string;
-      romPath: string;
-      md5: string;
-      crc32: string;
-      medias: TArray<TGameMedia>;
-      isScraped: Boolean;
+      id             : string;
+      name           : string;
+      romPath        : string;
+      md5            : string;
+      crc32          : string;
+      desc           : string;
+      genre          : string;
+      rating         : string;
+      releaseDate    : string;
+      developer      : string;
+      publisher      : string;
+      family         : string;
+      arcadeSystem   : string;
+      players        : string;
+      lang           : string;
+      region         : string;
+      medias         : TArray<TGameMedia>;
+      isScraped      : Boolean;
    end;
 
    TGamelistResult = class

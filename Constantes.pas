@@ -58,6 +58,8 @@ resourcestring
    rstDeleteOrphans = 'Delete %d selected orphan file(s) ?';
 
 const
+   {$INCLUDE 'screenscraper_credentials.inc'}
+
    cstMargin = 5;
 
    cstSettingsFileName = 'config.json';
@@ -95,6 +97,18 @@ const
    cstXmlHash = 'hash';
    cstXmlGame = 'game';
    cstXmlId = 'id';
+   cstXmlDesc = 'desc';
+   cstXmlGenre = 'genre';
+   cstXmlRating = 'rating';
+   cstXmlReleaseDate = 'releasedate';
+   cstXmlDeveloper = 'developer';
+   cstXmlPublisher = 'publisher';
+   cstXmlFamily = 'family';
+   cstXmlArcadeSystem = 'arcadesystemname';
+   cstXmlPlayers = 'players';
+   cstXmlLang = 'lang';
+   cstXmlRegion = 'region';
+   cstXmlScrap = 'scrap';
    cstGamelistFile = 'gamelist.xml';
    cstRomsFolder = 'roms';
    cstImages = 'images';
