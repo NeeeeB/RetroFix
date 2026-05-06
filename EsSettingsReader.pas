@@ -21,8 +21,8 @@ begin
    Result:= False;
 
    var _path:= TPath.Combine( aRetrobatPath,
-                  TPath.Combine( cstEmulationStationFolder,
-                     TPath.Combine( '.emulationstation', cstEsSettingsFile ) ) );
+                              TPath.Combine( cstEmulationStationFolder,
+                                             TPath.Combine( '.emulationstation', cstEsSettingsFile ) ) );
 
    if ( not TFile.Exists( _path ) ) then
       Exit;
@@ -47,7 +47,26 @@ begin
             var _parts:= _value.Split( ['_'] );
             if ( Length( _parts ) > 0 ) then
                aSettings.scrapeLanguage:= LowerCase( _parts[0] );
-         end;
+         end else if ( _name = cstEsScrapperImageKey ) then
+            aSettings.scrapeImageSrc:= _value
+         else if ( _name = cstEsScrapperLogoKey ) then
+            aSettings.scrapeLogoSrc:= _value
+         else if ( _name = cstEsScrapperThumbKey ) then
+            aSettings.scrapeThumbSrc:= _value
+         else if ( _name = cstEsScrapeBezelKey ) then
+            aSettings.scrapeBezel:= ( _value = 'true' )
+         else if ( _name = cstEsScrapeBoxBackKey ) then
+            aSettings.scrapeBoxBack:= ( _value = 'true' )
+         else if ( _name = cstEsScrapeFanartKey ) then
+            aSettings.scrapeFanart:= ( _value = 'true' )
+         else if ( _name = cstEsScrapeManualKey ) then
+            aSettings.scrapeManual:= ( _value = 'true' )
+         else if ( _name = cstEsScrapeMapKey ) then
+            aSettings.scrapeMap:= ( _value = 'true' )
+         else if ( _name = cstEsScrapeVideosKey ) then
+            aSettings.scrapeVideos:= ( _value = 'true' )
+         else if ( _name = cstEsScraperRegionKey ) then
+            aSettings.favRegion:= _value;
       end;
       _node:= _node.NextSibling;
    end;

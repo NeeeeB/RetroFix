@@ -7,7 +7,7 @@ uses
    System.Generics.Collections,
    Winapi.Windows, System.SysUtils, System.Classes, Vcl.Graphics,
    Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.Menus, Vcl.StdCtrls,
-   Vcl.ExtCtrls, Vcl.Skia,
+   Vcl.ExtCtrls,
    Constantes,
    Types, System.ImageList, Vcl.ImgList, Vcl.ComCtrls,
    BiosDetails, GameListDetails;
@@ -58,7 +58,7 @@ type
       FStopWatch: TStopwatch;
       FSettings: TSettings;
       FBiosResults: TArray<TBiosResult>;
-      FLoading, FSSAvailable: Boolean;
+      FLoading, FSSAvailable, FSSInitialized: Boolean;
       FBiosDetails: TfrmBiosDetails;
       FGamelistResults: TObjectList<TGamelistResult>;
       FGamelistDetails: TfrmGamelistDetails;
@@ -120,6 +120,11 @@ end;
 
 procedure TfrmMain.initSSCredentials;
 begin
+   if ( FSSInitialized ) then
+      Exit;
+
+   FSSInitialized:= True;
+
    // If not already defined in settings, try to get them from es_settings.cfg
    if FSettings.ssUserId.IsEmpty then begin
       if not readEsSettings( FSettings.retrobatPath, FSettings ) then begin
@@ -138,6 +143,17 @@ begin
    // Ensure language has a fallback
    if ( FSettings.scrapeLanguage.IsEmpty ) then
       FSettings.scrapeLanguage:= cstDefaultLanguage;
+
+   // Ensure scrape sources have fallbacks
+   if ( FSettings.scrapeImageSrc.IsEmpty ) then
+      FSettings.scrapeImageSrc:= cstDefaultImageSrc;
+   if ( FSettings.scrapeLogoSrc.IsEmpty ) then
+      FSettings.scrapeLogoSrc:= cstDefaultLogoSrc;
+   if ( FSettings.scrapeThumbSrc.IsEmpty ) then
+      FSettings.scrapeThumbSrc:= cstDefaultThumbSrc;
+
+   if ( FSettings.favRegion.IsEmpty ) then
+      FSettings.favRegion:= cstDefaultRegion;
 
    FSSAvailable:= ( not FSettings.ssUserId.IsEmpty ) and
                   ( not FSettings.ssPassword.IsEmpty );
@@ -190,7 +206,8 @@ begin
       FGamelistDetails:= TfrmGamelistDetails.Create( Self );
       FGamelistDetails.OnClose:= onGamelistDetailsClose;
       FGamelistDetails.OnSummaryUpdate:= onGamelistSummaryUpdate;
-      FGamelistDetails.SSAvailable:= FSSAvailable;
+      FGamelistDetails.setSSData( FSSSystemsMapping, FSSUserInfo,
+                                  FSettings, FSSAvailable );
    end;
    FGamelistDetails.setResults( FGamelistResults );
    FGamelistDetails.Show;
@@ -225,8 +242,8 @@ begin
    try
       _frm.loadSettings( FSettings );
       if ( _frm.ShowModal = mrOK ) then begin
-         FSSAvailable:= ( not FSettings.ssUserId.IsEmpty ) and
-                        ( not FSettings.ssPassword.IsEmpty );
+         FSSInitialized:= False;
+         initSSCredentials;
          if ( Assigned( FGamelistDetails ) ) then
             FGamelistDetails.SSAvailable:= FSSAvailable;
       end;

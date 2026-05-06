@@ -31,6 +31,15 @@ type
                   ssrError,
                   ssrQuotaExceeded );
 
+    TScrapeLanguage = ( slEnglish,
+                        slFrench,
+                        slGerman,
+                        slSpanish,
+                        slItalian,
+                        slPortuguese,
+                        slJapanese,
+                        slChinese );
+
    TSSMediaInfo = record
       mediaType: string;
       region   : string;
@@ -48,6 +57,9 @@ type
       players     : string;
       rating      : string;
       releaseDate : string;
+      family      : string;
+      arcadeSystem: string;
+      region      : string;
       medias      : TArray<TSSMediaInfo>;
    end;
 
@@ -64,9 +76,19 @@ type
       retrobatPath  : string;
       strictMode    : Boolean;
       forceExtract  : Boolean;
+      scrapeBezel   : Boolean;
+      scrapeBoxBack : Boolean;
+      scrapeFanart  : Boolean;
+      scrapeManual  : Boolean;
+      scrapeMap     : Boolean;
+      scrapeVideos  : Boolean;
+      favRegion     : string;
       ssUserId      : string;
       ssPassword    : string;
       scrapeLanguage: string;
+      scrapeImageSrc: string;
+      scrapeLogoSrc : string;
+      scrapeThumbSrc: string;
    end;
 
    TGameMedia = record
@@ -168,6 +190,17 @@ type
       totalMissingMedias: Integer;
       totalOrphanMedias : Integer;
       totalNoMedia      : Integer;
+   end;
+
+   TLangInfo = record
+      language: string;
+      region  : string;
+   end;
+
+   TLangEntry = record
+      tokens: string;
+      lang  : string;
+      region: string;
    end;
 
 implementation

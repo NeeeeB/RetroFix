@@ -9,11 +9,15 @@ uses
 function parseGamelist( const aRomDir: string;
                         const aSystemName: string ): TGamelistResult;
 
+function addGameToGamelist( const aRomDir: string;
+                            const aEntry: TGameEntry ): Boolean;
+
 implementation
 
 uses
    System.SysUtils,
    System.IOUtils,
+   System.DateUtils,
    Constantes,
    Neslib.Xml;
 
@@ -116,6 +120,74 @@ begin
    finally
       _games.Free;
    end;
+end;
+
+function addGameToGamelist( const aRomDir: string;
+                             const aEntry: TGameEntry ): Boolean;
+
+   procedure addElement( aGameNode: TXmlNode;
+                         const aTag, aValue: string );
+   begin
+      if ( not aValue.IsEmpty ) then
+         aGameNode.AddElement( aTag ).AddText( aValue );
+   end;
+
+begin
+   Result:= False;
+   var _gamelistPath:= TPath.Combine( aRomDir, cstGamelistFile );
+
+   var _doc:= TXmlDocument.Create;
+   if ( TFile.Exists( _gamelistPath ) ) then
+      _doc.Load( _gamelistPath )
+   else
+      _doc.Root.AddElement( cstXmlGameList );
+
+   var _root:= _doc.DocumentElement;
+   if ( _root.IsEmpty ) then
+      Exit;
+
+   var _game:= _root.AddElement( cstXmlGame );
+   if ( not aEntry.id.IsEmpty ) then
+      _game.AddAttribute( cstXmlId, aEntry.id );
+
+   var _relPath:= './'+TPath.GetFileName( aEntry.romPath );
+   addElement( _game, cstXmlPath, _relPath );
+   addElement( _game, cstXmlName, aEntry.name );
+   addElement( _game, cstXmlDesc, aEntry.desc );
+   addElement( _game, cstXmlGenre, aEntry.genre );
+
+   // Medias in Retrobat order
+   for var _mt in [ mtImage, mtVideo, mtMarquee, mtThumbnail, mtFanart,
+                    mtManual, mtBezel, mtBoxBack, mtMap, mtCartridge,
+                    mtBoxArt, mtWheel, mtMix, mtTitleshot, mtMagazine ] do begin
+      for var _media in aEntry.medias do begin
+         if ( _media.mediaType = _mt ) then begin
+            var _relMediaPath:= './'+ExtractRelativePath( aRomDir+'\', _media.path ).Replace( '\', '/' );
+            addElement( _game, cstMediaTypeTags[_mt], _relMediaPath );
+            Break;
+         end;
+      end;
+   end;
+
+   addElement( _game, cstXmlRating, aEntry.rating );
+   addElement( _game, cstXmlReleaseDate, aEntry.releaseDate );
+   addElement( _game, cstXmlDeveloper, aEntry.developer );
+   addElement( _game, cstXmlPublisher, aEntry.publisher );
+   addElement( _game, cstXmlFamily, aEntry.family );
+   addElement( _game, cstXmlArcadeSystem, aEntry.arcadeSystem );
+   addElement( _game, cstXmlPlayers, aEntry.players );
+   addElement( _game, cstXmlMD5, aEntry.md5 );
+   addElement( _game, cstXmlLang, aEntry.lang );
+   addElement( _game, cstXmlRegion, aEntry.region );
+
+   // Scrap tag
+   var _scrapNode:= _game.AddElement( cstXmlScrap );
+   _scrapNode.AddAttribute( cstSSScrapName, cstSSScrapSource );
+   _scrapNode.AddAttribute( cstSSScrapDate,
+                            FormatDateTime( cstSSScrapDateFormat, Now ) );
+
+   _doc.Save( _gamelistPath );
+   Result:= True;
 end;
 
 end.

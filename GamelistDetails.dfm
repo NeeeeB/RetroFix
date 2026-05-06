@@ -5,6 +5,8 @@ object frmGamelistDetails: TfrmGamelistDetails
   ClientHeight = 600
   ClientWidth = 900
   Color = clBtnFace
+  Constraints.MinHeight = 639
+  Constraints.MinWidth = 916
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
   Font.Height = -12
@@ -23,6 +25,10 @@ object frmGamelistDetails: TfrmGamelistDetails
     Align = alTop
     BevelOuter = bvNone
     TabOrder = 1
+    ExplicitLeft = -8
+    DesignSize = (
+      900
+      35)
     object lblSystem: TLabel
       Left = 8
       Top = 10
@@ -36,6 +42,15 @@ object frmGamelistDetails: TfrmGamelistDetails
       Width = 38
       Height = 15
       Caption = 'lblStats'
+    end
+    object lblScraping: TLabel
+      Left = 684
+      Top = 9
+      Width = 55
+      Height = 15
+      Anchors = [akTop, akRight]
+      Caption = 'Scraping...'
+      Visible = False
     end
     object cbxSystems: TComboBox
       Left = 60
@@ -55,6 +70,17 @@ object frmGamelistDetails: TfrmGamelistDetails
       TabOrder = 1
       Visible = False
       OnClick = btnVerifyHashesClick
+    end
+    object pbScraping: TProgressBar
+      AlignWithMargins = True
+      Left = 745
+      Top = 6
+      Width = 150
+      Height = 23
+      Anchors = [akTop, akRight]
+      Style = pbstMarquee
+      TabOrder = 2
+      Visible = False
     end
   end
   object pgcMain: TPageControl
@@ -102,6 +128,7 @@ object frmGamelistDetails: TfrmGamelistDetails
         ViewStyle = vsReport
         OnContextPopup = lvContextPopup
         OnMouseMove = lvMouseMove
+        ExplicitLeft = 4
       end
     end
     object tbsUnscraped: TTabSheet
@@ -309,6 +336,10 @@ object frmGamelistDetails: TfrmGamelistDetails
     object mniCopyExpectedHash: TMenuItem
       Caption = 'Copy expected hash'
       OnClick = mniCopyExpectedHashClick
+    end
+    object mniScrapeGame: TMenuItem
+      Caption = 'Scrape this game'
+      OnClick = mniScrapeGameClick
     end
   end
 end

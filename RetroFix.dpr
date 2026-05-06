@@ -19,7 +19,8 @@ uses
   GamelistDetails in 'GamelistDetails.pas' {Form2},
   ScreenScraperApi in 'ScreenScraperApi.pas',
   EsSettingsReader in 'EsSettingsReader.pas',
-  Settings in 'Settings.pas' {Form3};
+  Settings in 'Settings.pas' {Form3},
+  RomUtils in 'RomUtils.pas';
 
 {$R *.res}
 
