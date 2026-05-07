@@ -1,6 +1,4 @@
-# <img src="https://raw.githubusercontent.com/NeeeeB/RetroFix/main/screenshots/RetroFix.png" width="32" /> RetroFix
-
-<img src="https://raw.githubusercontent.com/NeeeeB/RetroFix/main/screenshots/RetroFix.png" width="120" align="right" />
+# <img src="https://raw.githubusercontent.com/NeeeeB/RetroFix/main/screenshots/RetroFix.png" width="48" /> RetroFix
 
 **Fix your game collection for Retrobat**
 
