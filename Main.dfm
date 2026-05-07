@@ -4,7 +4,7 @@ object frmMain: TfrmMain
   BorderIcons = [biSystemMenu, biMinimize]
   BorderStyle = bsSingle
   Caption = 'Retrofix - Fix your game collection'
-  ClientHeight = 461
+  ClientHeight = 313
   ClientWidth = 545
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -21,20 +21,22 @@ object frmMain: TfrmMain
     Left = 0
     Top = 53
     Width = 545
-    Height = 378
+    Height = 230
     Align = alClient
     BevelOuter = bvNone
     TabOrder = 0
+    ExplicitHeight = 378
     object gbxActions: TGroupBox
       AlignWithMargins = True
       Left = 3
       Top = 3
       Width = 539
-      Height = 372
+      Height = 224
       Align = alClient
       Caption = 'Actions'
       Enabled = False
       TabOrder = 0
+      ExplicitHeight = 372
       object gbxBios: TGroupBox
         AlignWithMargins = True
         Left = 5
@@ -212,22 +214,25 @@ object frmMain: TfrmMain
   end
   object pnlBottom: TPanel
     Left = 0
-    Top = 431
+    Top = 283
     Width = 545
     Height = 30
     Margins.Top = 0
     Align = alBottom
     BevelOuter = bvNone
     TabOrder = 2
+    ExplicitTop = 431
     object lblProgress: TLabel
       Left = 0
       Top = 8
-      Width = 32
-      Height = 15
+      Width = 545
+      Height = 22
       Align = alClient
       Alignment = taCenter
       Caption = 'Ready'
       Layout = tlCenter
+      ExplicitWidth = 32
+      ExplicitHeight = 15
     end
     object progressBar: TProgressBar
       AlignWithMargins = True
@@ -245,13 +250,13 @@ object frmMain: TfrmMain
     FavoriteLinks = <>
     FileTypes = <>
     Options = [fdoPickFolders]
-    Left = 416
-    Top = 360
+    Left = 456
+    Top = 192
   end
   object imageList: TImageList
     ColorDepth = cd32Bit
-    Left = 104
-    Top = 320
+    Left = 328
+    Top = 192
     Bitmap = {
       494C010102000800040010001000FFFFFFFF2110FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010

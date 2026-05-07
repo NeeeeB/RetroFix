@@ -37,6 +37,7 @@ type
       mniScrapeGame: TMenuItem;
       pbScraping: TProgressBar;
       lblScraping: TLabel;
+      mniScrapeMedias: TMenuItem;
       procedure FormCreate( Sender: TObject );
       procedure cbxSystemsChange( Sender: TObject );
       procedure pgcMainMouseMove( Sender: TObject; Shift: TShiftState; X, Y: Integer );
@@ -51,6 +52,7 @@ type
       procedure mniAddMissingMediaClick(Sender: TObject);
       procedure mniCopyExpectedHashClick(Sender: TObject);
       procedure mniScrapeGameClick(Sender: TObject);
+      procedure mniScrapeMediasClick(Sender: TObject);
 
    private
       FResults: TObjectList<TGamelistResult>;
@@ -85,6 +87,9 @@ type
                                     const aRegion: string;
                                     const aMedias: TArray<TSSMediaInfo>;
                                     out aError: string ): TGameMedia;
+      procedure updateVerifyHashesVisibility;
+      procedure scrapeRoms( const aRefs: TArray<TGameEntryRef> );
+      procedure scrapeMedias(const aRefs: TArray<TGameEntryRef>);
 
    public
       property OnSummaryUpdate: TNotifyEvent read FOnSummaryUpdate write FOnSummaryUpdate;
@@ -222,13 +227,19 @@ begin
    mniCopyExpectedHash.Visible:= ( pgcMain.ActivePage = tbsHashMismatch ) and
                                  ( lvwHashMismatch.Selected <> nil );
 
-   mniScrapeGame.Visible:= FSSAvailable and
-                           ( pgcMain.ActivePage = tbsUnscraped ) and
-                           ( lvwUnscraped.Selected <> nil ) and
-                           ( lvwUnscraped.SelCount = 1 );
-
+   mniScrapeGame.Visible:= ( FSSAvailable ) and
+                           ( ( pgcMain.ActivePage = tbsUnscraped ) and
+                             ( lvwUnscraped.Selected <> nil ) ) or
+                           ( ( pgcMain.ActivePage = tbsNoMedia ) and
+                             ( lvwNoMedia.Selected <> nil ) );
    mniScrapeGame.Enabled:= mniScrapeGame.Visible and
                            ( not FScrapingInProgress );
+
+   mniScrapeMedias.Visible:= ( FSSAvailable ) and
+                             ( pgcMain.ActivePage = tbsMissingMedias ) and
+                             ( lvwMissingMedias.Selected <> nil );
+   mniScrapeMedias.Enabled:= mniScrapeMedias.Visible and
+                             ( not FScrapingInProgress );
 end;
 
 procedure TfrmGamelistDetails.populateComboBox;
@@ -375,21 +386,7 @@ begin
    tbsHashMismatch.TabVisible:= False;
    lvwHashMismatch.Items.Clear;
 
-   var _filtered:= getFilteredResults;
-   var _hasHashes:= False;
-   if cbxSystems.ItemIndex > 0 then begin
-      for var _r in _filtered do
-         for var _g in _r.games do
-            if not _g.md5.IsEmpty or not _g.crc32.IsEmpty then begin
-               _hasHashes:= True;
-               Break;
-            end;
-   end;
-   btnVerifyHashes.Visible:= _hasHashes;
-   if btnVerifyHashes.Visible then
-      lblStats.Left:= btnVerifyHashes.Left + btnVerifyHashes.Width + cstMargin
-   else
-      lblStats.Left:= btnVerifyHashes.Left;
+   updateVerifyHashesVisibility;
    populateListViews;
 end;
 
@@ -516,6 +513,7 @@ begin
                   _ref.gameName:= _g.name;
                   _ref.romPath:= _g.romPath;
                   _ref.mediaPath:= _m.path;
+                  _ref.mediaType:= _m.mediaType;
                   _ref.gamelistResult:= _r;
                   FGameEntryRefs.Add( _ref );
                   _item.Data:= _ref;
@@ -750,183 +748,499 @@ end;
 
 procedure TfrmGamelistDetails.mniScrapeGameClick( Sender: TObject );
 begin
-   if ( lvwUnscraped.Selected = nil ) or
-      ( lvwUnscraped.Selected.Data = nil ) then
-      Exit;
+   var _lv:= pgcMain.ActivePage.Controls[0] as TListView;
+   if ( _lv.SelCount = 0 ) then Exit;
 
-   var _ref:= TGameEntryRef( lvwUnscraped.Selected.Data );
-
-   // Find system ID in mapping
-   if not FSSSystemsMapping.ContainsKey( LowerCase( _ref.systemName ) ) then begin
-      ShowMessage( 'System "' + _ref.systemName + '" not found in ScreenScraper mapping.' );
-      Exit;
+   var _refs: TArray<TGameEntryRef>;
+   var _item:= _lv.Selected;
+   while ( _item <> nil ) do begin
+      if ( _item.Data <> nil ) then begin
+         var _ref:= TGameEntryRef( _item.Data );
+         if FSSSystemsMapping.ContainsKey( LowerCase( _ref.systemName ) ) then
+            _refs:= _refs + [_ref]
+         else
+            ShowMessage( 'System "' + _ref.systemName + '" not found in ScreenScraper mapping.' );
+      end;
+      _item:= _lv.GetNextItem( _item, sdAll, [isSelected] );
    end;
 
-   var _systemId:= FSSSystemsMapping[ LowerCase( _ref.systemName ) ];
-   var _romPath:= _ref.romPath;
-   var _romDir:= _ref.gamelistResult.romDir;
-   var _systemName:= _ref.systemName;
+   if Length( _refs ) = 0 then Exit;
+   scrapeRoms( _refs );
+end;
+
+procedure TfrmGamelistDetails.scrapeRoms( const aRefs: TArray<TGameEntryRef> );
+begin
+   var _total:= Length( aRefs );
+
+   if ( _total > 1 ) then begin
+      pbScraping.Style:= pbstNormal;
+      pbScraping.Max:= _total;
+      pbScraping.Position:= 0;
+   end else
+      pbScraping.Style:= pbstMarquee;
 
    FScrapingInProgress:= True;
-   lblScraping.Visible:= True;
    pbScraping.Visible:= True;
-   lvwUnscraped.Items.BeginUpdate;
+   lblScraping.Visible:= True;
 
    TTask.Run( procedure
    begin
+      var _quotaExceeded:= False;
+
       try
-         var _gameInfo: TSSGameInfo;
-         var _err: string;
+         var _current:= 0;
+         for var _ref in aRefs do begin
+            Inc( _current );
+            if FFormDestroyed or _quotaExceeded then Break;
 
-         // Region for media selection
-         var _mediaRegion:= FSettings.favRegion;
+            var _romPath:= _ref.romPath;
+            var _romDir:= _ref.gamelistResult.romDir;
+            var _savedTotalRoms:= _ref.gamelistResult.totalRoms;
 
-         // Lang and region for gamelist tags
-         var _langInfo:= detectRomLangAndRegion( _romPath, _ref.systemName );
-         var _romRegion:= _langInfo.region;
-         if _romRegion.IsEmpty then
-            _romRegion:= FSettings.favRegion;
+            if not FSSSystemsMapping.ContainsKey( LowerCase( _ref.systemName ) ) then
+               Continue;
 
-         var _result:= getGameInfo( FSettings.ssUserId, FSettings.ssPassword,
-                                    _systemId, _romPath,
-                                    FSettings.scrapeLanguage, _mediaRegion,
-                                    _gameInfo, _err );
+            var _systemId:= FSSSystemsMapping[ LowerCase( _ref.systemName ) ];
 
-         TThread.Queue( nil, procedure
-         begin
-            if FFormDestroyed then Exit;
+            // Update label
+            TThread.Queue( nil, procedure
+            begin
+               if FFormDestroyed then Exit;
+                  lblScraping.Caption:= Format( '%d/%d ', [_current, _total] )+
+                                        rstScraping + ' "' +
+                                        TPath.GetFileNameWithoutExtension( _romPath ) + '"';
+               if ( _total > 1 ) then
+                  pbScraping.Position:= _current;
+            end );
+
+            var _mediaRegion:= FSettings.favRegion;
+            var _langInfo:= detectRomLangAndRegion( _romPath, _ref.systemName );
+            var _romRegion:= _langInfo.region;
+            if _romRegion.IsEmpty then
+               _romRegion:= FSettings.favRegion;
+
+            var _gameInfo: TSSGameInfo;
+            var _err: string;
+            var _result:= getGameInfo( FSettings.ssUserId, FSettings.ssPassword,
+                                       _systemId, _romPath,
+                                       FSettings.scrapeLanguage, _mediaRegion,
+                                       _gameInfo, _err );
 
             case _result of
-               ssrNotFound:
-                  ShowMessage( 'Game not found on ScreenScraper : ' + TPath.GetFileName( _romPath ) );
+               ssrQuotaExceeded: begin
+                  _quotaExceeded:= True;
+                  TThread.Queue( nil, procedure
+                  begin
+                     if FFormDestroyed then Exit;
+                     ShowMessage( 'ScreenScraper quota exceeded. Try again later.' );
+                  end );
+               end;
 
-               ssrQuotaExceeded:
-                  ShowMessage( 'ScreenScraper quota exceeded. Try again later.' );
+               ssrNotFound:
+                  TThread.Queue( nil, procedure
+                  begin
+                     if FFormDestroyed then Exit;
+                     ShowMessage( 'Game not found : ' + TPath.GetFileName( _romPath ) );
+                  end );
 
                ssrError:
-                  ShowMessage( 'ScreenScraper error : ' + _err );
+                  TThread.Queue( nil, procedure
+                  begin
+                     if FFormDestroyed then Exit;
+                     ShowMessage( 'ScreenScraper error : ' + _err );
+                  end );
 
                ssrOK: begin
                   var _downloadedMedias:= TList<TGameMedia>.Create;
                   try
-                     // Configurable sources
                      var _gm:= downloadIfAvailable( FSettings.scrapeImageSrc, cstXmlImage,
                                                     cstXmlImage, TPath.Combine( _romDir, cstImages ),
                                                     mtImage, _romPath, FSettings.scrapeLanguage,
                                                     _mediaRegion, _gameInfo.medias, _err );
-                     if ( _gm.exists ) then _downloadedMedias.Add( _gm );
+                     if _gm.exists then _downloadedMedias.Add( _gm );
 
                      if ( FSettings.scrapeThumbSrc <> FSettings.scrapeImageSrc ) then begin
                         _gm:= downloadIfAvailable( FSettings.scrapeThumbSrc, cstXmlThumbnail,
                                                    cstThumbFileSuffix, TPath.Combine( _romDir, cstImages ),
                                                    mtThumbnail, _romPath, FSettings.scrapeLanguage,
                                                    _mediaRegion, _gameInfo.medias, _err );
-                        if ( _gm.exists ) then _downloadedMedias.Add( _gm );
+                        if _gm.exists then _downloadedMedias.Add( _gm );
                      end;
 
                      _gm:= downloadIfAvailable( FSettings.scrapeLogoSrc, cstXmlMarquee,
                                                 cstXmlMarquee, TPath.Combine( _romDir, cstImages ),
                                                 mtMarquee, _romPath, FSettings.scrapeLanguage,
                                                 _mediaRegion, _gameInfo.medias, _err );
-                     if ( _gm.exists ) then _downloadedMedias.Add( _gm );
+                     if _gm.exists then _downloadedMedias.Add( _gm );
 
-                     // Fixed media types
-                     if ( FSettings.scrapeVideos ) then begin
+                     if FSettings.scrapeVideos then begin
                         _gm:= downloadIfAvailable( cstSSMediaVideo, cstXmlVideo,
                                                    cstXmlVideo, TPath.Combine( _romDir, cstVideos ),
                                                    mtVideo, _romPath, FSettings.scrapeLanguage,
                                                    _mediaRegion, _gameInfo.medias, _err );
-                        if ( _gm.exists ) then _downloadedMedias.Add( _gm );
+                        if _gm.exists then _downloadedMedias.Add( _gm );
                      end;
 
-                     if ( FSettings.scrapeFanart ) then begin
+                     if FSettings.scrapeFanart then begin
                         _gm:= downloadIfAvailable( cstSSMediaFanart, cstXmlFanart,
                                                    cstXmlFanart, TPath.Combine( _romDir, cstImages ),
                                                    mtFanart, _romPath, FSettings.scrapeLanguage,
                                                    _mediaRegion, _gameInfo.medias, _err );
-                        if ( _gm.exists ) then _downloadedMedias.Add( _gm );
+                        if _gm.exists then _downloadedMedias.Add( _gm );
                      end;
 
-                     if ( FSettings.scrapeBoxBack ) then begin
+                     if FSettings.scrapeBoxBack then begin
                         _gm:= downloadIfAvailable( cstSSMediaBoxBack, cstXmlBoxBack,
                                                    cstXmlBoxBack, TPath.Combine( _romDir, cstImages ),
                                                    mtBoxBack, _romPath, FSettings.scrapeLanguage,
                                                    _mediaRegion, _gameInfo.medias, _err );
-                        if ( _gm.exists ) then _downloadedMedias.Add( _gm );
+                        if _gm.exists then _downloadedMedias.Add( _gm );
                      end;
 
-                     if ( FSettings.scrapeManual ) then begin
+                     if FSettings.scrapeManual then begin
                         _gm:= downloadIfAvailable( cstSSMediaManual, cstXmlManual,
                                                    cstXmlManual, TPath.Combine( _romDir, cstManuals ),
                                                    mtManual, _romPath, FSettings.scrapeLanguage,
                                                    _mediaRegion, _gameInfo.medias, _err );
-                        if ( _gm.exists ) then _downloadedMedias.Add( _gm );
+                        if _gm.exists then _downloadedMedias.Add( _gm );
                      end;
 
-                     if ( FSettings.scrapeMap ) then begin
+                     if FSettings.scrapeMap then begin
                         _gm:= downloadIfAvailable( cstSSMediaMap, cstXmlMap,
                                                    cstXmlMap, TPath.Combine( _romDir, cstImages ),
                                                    mtMap, _romPath, FSettings.scrapeLanguage,
                                                    _mediaRegion, _gameInfo.medias, _err );
-                        if ( _gm.exists ) then _downloadedMedias.Add( _gm );
+                        if _gm.exists then _downloadedMedias.Add( _gm );
                      end;
 
-                     if ( FSettings.scrapeBezel ) then begin
+                     if FSettings.scrapeBezel then begin
                         _gm:= downloadIfAvailable( cstSSMediaBezel, cstXmlBezel,
                                                    cstXmlBezel, TPath.Combine( _romDir, cstImages ),
                                                    mtBezel, _romPath, FSettings.scrapeLanguage,
                                                    _mediaRegion, _gameInfo.medias, _err );
-                        if ( _gm.exists ) then _downloadedMedias.Add( _gm );
+                        if _gm.exists then _downloadedMedias.Add( _gm );
                      end;
 
-                     // Build game entry and write to gamelist
                      var _entry:= Default( TGameEntry );
-                     _entry.id           := _gameInfo.id;
-                     _entry.name         := _gameInfo.name;
-                     _entry.desc         := _gameInfo.desc;
-                     _entry.genre        := _gameInfo.genre;
-                     _entry.family       := _gameInfo.family;
-                     _entry.arcadeSystem := _gameInfo.arcadeSystem;
-                     _entry.rating       := _gameInfo.rating;
-                     _entry.releaseDate  := _gameInfo.releaseDate;
-                     _entry.developer    := _gameInfo.developer;
-                     _entry.publisher    := _gameInfo.publisher;
-                     _entry.players      := _gameInfo.players;
-                     _entry.lang         := _langInfo.language;
-                     _entry.region       := _romRegion;
-                     _entry.romPath      := _romPath;
-                     _entry.md5          := fileMD5( _romPath );
-                     _entry.crc32        := fileCRC32( _romPath );
-                     _entry.medias       := _downloadedMedias.ToArray;
-                     _entry.isScraped    := _downloadedMedias.Count > 0;
+                     _entry.id          := _gameInfo.id;
+                     _entry.name        := _gameInfo.name;
+                     _entry.desc        := _gameInfo.desc;
+                     _entry.genre       := _gameInfo.genre;
+                     _entry.family      := _gameInfo.family;
+                     _entry.arcadeSystem:= _gameInfo.arcadeSystem;
+                     _entry.rating      := _gameInfo.rating;
+                     _entry.releaseDate := _gameInfo.releaseDate;
+                     _entry.developer   := _gameInfo.developer;
+                     _entry.publisher   := _gameInfo.publisher;
+                     _entry.players     := _gameInfo.players;
+                     _entry.lang        := _langInfo.language;
+                     _entry.region      := _romRegion;
+                     _entry.romPath     := _romPath;
+                     _entry.md5         := fileMD5( _romPath );
+                     _entry.crc32       := fileCRC32( _romPath );
+                     _entry.medias      := _downloadedMedias.ToArray;
+                     _entry.isScraped   := _downloadedMedias.Count > 0;
 
                      addGameToGamelist( _romDir, _entry );
                   finally
                      _downloadedMedias.Free;
                   end;
+
+                  // Update FResults in main thread
+                  TThread.Synchronize( nil, procedure
+                  begin
+                     if FFormDestroyed then Exit;
+
+                     var _unscrapedList:= TList<string>.Create;
+                     try
+                        for var s in _ref.gamelistResult.unscrapedROMs do
+                           if s <> _romPath then
+                              _unscrapedList.Add( s );
+                        _ref.gamelistResult.unscrapedROMs:= _unscrapedList.ToArray;
+                     finally
+                        _unscrapedList.Free;
+                     end;
+
+                     var _newResult:= parseGamelist( _romDir, _ref.gamelistResult.systemName );
+                     _ref.gamelistResult.games        := _newResult.games;
+                     _ref.gamelistResult.missingROMs  := _newResult.missingROMs;
+                     _ref.gamelistResult.missingMedias:= _newResult.missingMedias;
+                     _ref.gamelistResult.orphanMedias := _newResult.orphanMedias;
+                     _newResult.Free;
+                     _ref.gamelistResult.totalRoms:= _savedTotalRoms;
+                  end );
                end;
             end;
-
-            lvwUnscraped.Items.EndUpdate;
-            FScrapingInProgress:= False;
-            lblScraping.Visible:= False;
-            pbScraping.Visible:= False;
-            if ( _result = ssrOK ) then
-               ShowMessage( rstGameScrapedSuccessfully );
-         end );
+         end;
       except
          on E: Exception do
             TThread.Queue( nil, procedure
             begin
                if FFormDestroyed then Exit;
                ShowMessage( 'Unexpected error : ' + E.Message );
-               lvwUnscraped.Items.EndUpdate;
-               FScrapingInProgress:= False;
-               lblScraping.Visible:= False;
-               pbScraping.Visible:= False;
             end );
       end;
+
+      // Single UI refresh at the end
+      TThread.Queue( nil, procedure
+      begin
+         if FFormDestroyed then Exit;
+         pbScraping.Style:= pbstMarquee;
+         pbScraping.Position:= 0;
+         FScrapingInProgress:= False;
+         lblScraping.Visible:= False;
+         pbScraping.Visible:= False;
+         populateListViews;
+         updateVerifyHashesVisibility;
+         updateStats( getFilteredResults );
+         if Assigned( FOnSummaryUpdate ) then
+            FOnSummaryUpdate( Self );
+      end );
    end );
+end;
+
+procedure TfrmGamelistDetails.mniScrapeMediasClick( Sender: TObject );
+begin
+   if ( lvwMissingMedias.SelCount = 0 ) then Exit;
+
+   var _refs: TArray<TGameEntryRef>;
+   var _item:= lvwMissingMedias.Selected;
+   while ( _item <> nil ) do begin
+      if ( _item.Data <> nil ) then
+         _refs:= _refs + [TGameEntryRef( _item.Data )];
+      _item:= lvwMissingMedias.GetNextItem( _item, sdAll, [isSelected] );
+   end;
+
+   if Length( _refs ) = 0 then Exit;
+   scrapeMedias( _refs );
+end;
+
+procedure TfrmGamelistDetails.scrapeMedias( const aRefs: TArray<TGameEntryRef> );
+begin
+   FScrapingInProgress:= True;
+   pbScraping.Visible:= True;
+   lblScraping.Visible:= True;
+
+   // Group refs by romPath to avoid multiple getGameInfo calls for the same game
+   var _grouped:= TObjectDictionary<string, TList<TGameEntryRef>>.Create( [doOwnsValues] );
+   for var _ref in aRefs do begin
+      if not _grouped.ContainsKey( _ref.romPath ) then
+         _grouped.Add( _ref.romPath, TList<TGameEntryRef>.Create );
+      _grouped[_ref.romPath].Add( _ref );
+   end;
+
+   // Build ordered list of unique roms
+   var _romPaths:= TList<string>.Create;
+   for var _key in _grouped.Keys do
+      _romPaths.Add( _key );
+
+   if ( _romPaths.Count > 1 ) then begin
+      pbScraping.Style:= pbstNormal;
+      pbScraping.Max:= _romPaths.Count;
+      pbScraping.Position:= 0;
+   end else
+      pbScraping.Style:= pbstMarquee;
+
+   TTask.Run( procedure
+   begin
+      var _total:= _romPaths.Count;
+      var _current:= 0;
+      var _quotaExceeded:= False;
+
+      try
+         for var _romPath in _romPaths do begin
+            if ( FFormDestroyed ) or ( _quotaExceeded ) then Break;
+            Inc( _current );
+
+            var _refsForRom:= _grouped[_romPath];
+            var _ref0:= _refsForRom[0]; // Use first ref for common data
+            var _romDir:= _ref0.gamelistResult.romDir;
+
+            if ( not FSSSystemsMapping.ContainsKey( LowerCase( _ref0.systemName ) ) ) then
+               Continue;
+
+            var _systemId:= FSSSystemsMapping[ LowerCase( _ref0.systemName ) ];
+
+            TThread.Queue( nil, procedure
+            begin
+               if ( FFormDestroyed ) then Exit;
+               lblScraping.Caption:= Format( '%d/%d ', [_current, _total] ) +
+                                     rstScraping + ' "' +
+                                     mediaTypeToStr( _ref0.mediaType ) + ' - ' +
+                                     TPath.GetFileNameWithoutExtension( _romPath ) + '"';
+               if ( _total > 1 ) then
+                  pbScraping.Position:= _current;
+            end );
+
+            var _mediaRegion:= FSettings.favRegion;
+            var _gameInfo: TSSGameInfo;
+            var _err: string;
+            var _result:= getGameInfo( FSettings.ssUserId, FSettings.ssPassword,
+                                       _systemId, _romPath,
+                                       FSettings.scrapeLanguage, _mediaRegion,
+                                       _gameInfo, _err );
+
+            case _result of
+               ssrQuotaExceeded: begin
+                  _quotaExceeded:= True;
+                  TThread.Queue( nil, procedure
+                  begin
+                     if ( FFormDestroyed ) then Exit;
+                     ShowMessage( 'ScreenScraper quota exceeded. Try again later.' );
+                  end );
+               end;
+
+               ssrNotFound:
+                  TThread.Queue( nil, procedure
+                  begin
+                     if ( FFormDestroyed ) then Exit;
+                     ShowMessage( 'Game not found : ' + TPath.GetFileName( _romPath ) );
+                  end );
+
+               ssrError:
+                  TThread.Queue( nil, procedure
+                  begin
+                     if ( FFormDestroyed ) then Exit;
+                     ShowMessage( 'ScreenScraper error : ' + _err );
+                  end );
+
+               ssrOK: begin
+                  // Download each missing media for this game
+                  for var _ref in _refsForRom do begin
+                     var _ripSource:= '';
+                     var _fileSuffix:= '';
+                     var _destFolder:= '';
+
+                     case _ref.mediaType of
+                        mtImage: begin
+                           _ripSource:= FSettings.scrapeImageSrc;
+                           _fileSuffix:= cstXmlImage;
+                           _destFolder:= TPath.Combine( _romDir, cstImages );
+                        end;
+                        mtThumbnail: begin
+                           _ripSource:= FSettings.scrapeThumbSrc;
+                           _fileSuffix:= cstThumbFileSuffix;
+                           _destFolder:= TPath.Combine( _romDir, cstImages );
+                        end;
+                        mtMarquee: begin
+                           _ripSource:= FSettings.scrapeLogoSrc;
+                           _fileSuffix:= cstXmlMarquee;
+                           _destFolder:= TPath.Combine( _romDir, cstImages );
+                        end;
+                        mtVideo: begin
+                           _ripSource:= cstSSMediaVideo;
+                           _fileSuffix:= cstXmlVideo;
+                           _destFolder:= TPath.Combine( _romDir, cstVideos );
+                        end;
+                        mtFanart: begin
+                           _ripSource:= cstSSMediaFanart;
+                           _fileSuffix:= cstXmlFanart;
+                           _destFolder:= TPath.Combine( _romDir, cstImages );
+                        end;
+                        mtBoxBack: begin
+                           _ripSource:= cstSSMediaBoxBack;
+                           _fileSuffix:= cstXmlBoxBack;
+                           _destFolder:= TPath.Combine( _romDir, cstImages );
+                        end;
+                        mtManual: begin
+                           _ripSource:= cstSSMediaManual;
+                           _fileSuffix:= cstXmlManual;
+                           _destFolder:= TPath.Combine( _romDir, cstManuals );
+                        end;
+                        mtMap: begin
+                           _ripSource:= cstSSMediaMap;
+                           _fileSuffix:= cstXmlMap;
+                           _destFolder:= TPath.Combine( _romDir, cstImages );
+                        end;
+                        mtBezel: begin
+                           _ripSource:= cstSSMediaBezel;
+                           _fileSuffix:= cstXmlBezel;
+                           _destFolder:= TPath.Combine( _romDir, cstImages );
+                        end;
+                     end;
+
+                     if ( _ripSource.IsEmpty ) then Continue;
+
+                     var _gm:= downloadIfAvailable( _ripSource, cstMediaTypeTags[_ref.mediaType],
+                                                    _fileSuffix, _destFolder,
+                                                    _ref.mediaType, _romPath,
+                                                    FSettings.scrapeLanguage, _mediaRegion,
+                                                    _gameInfo.medias, _err );
+
+                     if ( _gm.exists ) then begin
+                        var _mediaPath:= _ref.mediaPath;
+                        TThread.Synchronize( nil, procedure
+                        begin
+                           if ( FFormDestroyed ) then Exit;
+                           var _missingList:= TList<string>.Create;
+                           try
+                              for var s in _ref.gamelistResult.missingMedias do
+                                 if ( s <> _mediaPath ) then
+                                    _missingList.Add( s );
+                              _ref.gamelistResult.missingMedias:= _missingList.ToArray;
+                           finally
+                              _missingList.Free;
+                           end;
+
+                           var _newResult:= parseGamelist( _romDir, _ref.gamelistResult.systemName );
+                           _ref.gamelistResult.games:= _newResult.games;
+                           _ref.gamelistResult.missingROMs:= _newResult.missingROMs;
+                           _ref.gamelistResult.missingMedias:= _newResult.missingMedias;
+                           _ref.gamelistResult.orphanMedias:= _newResult.orphanMedias;
+                           _newResult.Free;
+                        end );
+                     end;
+                  end;
+               end;
+            end;
+         end;
+      except
+         on E: Exception do
+            TThread.Queue( nil, procedure
+            begin
+               if ( FFormDestroyed ) then Exit;
+               ShowMessage( 'Unexpected error : ' + E.Message );
+            end );
+      end;
+
+      // Cleanup
+      TThread.Queue( nil, procedure
+      begin
+         if FFormDestroyed then Exit;
+         FScrapingInProgress:= False;
+         lblScraping.Visible:= False;
+         pbScraping.Visible:= False;
+         pbScraping.Style:= pbstMarquee;
+         pbScraping.Position:= 0;
+         populateListViews;
+         updateVerifyHashesVisibility;
+         updateStats( getFilteredResults );
+         if ( Assigned( FOnSummaryUpdate ) ) then
+            FOnSummaryUpdate( Self );
+         // Free after UI update
+         _grouped.Free;
+         _romPaths.Free;
+      end );
+   end );
+end;
+
+procedure TfrmGamelistDetails.updateVerifyHashesVisibility;
+begin
+   var _hasHashes:= False;
+   if ( cbxSystems.ItemIndex > 0 ) then begin
+      var _filtered:= getFilteredResults;
+      for var _r in _filtered do
+         for var _g in _r.games do
+            if ( not _g.md5.IsEmpty ) or ( not _g.crc32.IsEmpty ) then begin
+               _hasHashes:= True;
+               Break;
+            end;
+   end;
+   btnVerifyHashes.Visible:= _hasHashes;
+   if ( btnVerifyHashes.Visible ) then
+      lblStats.Left:= btnVerifyHashes.Left + btnVerifyHashes.Width + cstMargin
+   else
+      lblStats.Left:= btnVerifyHashes.Left;
 end;
 
 function TfrmGamelistDetails.downloadIfAvailable( const aRipSource: string;

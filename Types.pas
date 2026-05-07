@@ -135,6 +135,7 @@ type
       gameName      : string;
       romPath       : string;
       mediaPath     : string;
+      mediaType     : TMediaType;
       gamelistResult: TGameListResult;
    end;
 

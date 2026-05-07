@@ -384,7 +384,14 @@ begin
       try
          var _romsDir:= TPath.Combine( FSettings.retrobatPath, cstRomsFolder );
          FGamelistResults.Free;
-         FGamelistResults:= checkGamelists( _romsDir, onGamelistProgress );
+         var _biosJsonPath:= getBiosJsonPath;
+         if ( not TFile.Exists( _biosJsonPath ) ) then begin
+            var _json, _err: string;
+            if ( extractBiosJson( FSettings.retrobatPath, _json, _err ) ) then
+               TFile.WriteAllText( _biosJsonPath, _json, TEncoding.UTF8 );
+         end;
+
+         FGamelistResults:= checkGamelists( _romsDir, _biosJsonPath, onGamelistProgress );
          displayGamelistSummary( computeGamelistSummary( FGamelistResults ) );
          btnGamelistScanDetails.Enabled:= True;
       finally

@@ -11,24 +11,35 @@ type
                                           aCurrent, aTotal: Integer ) of object;
 
 function checkGamelists( const aRomsDir: string;
+                         const aBiosJsonPath: string;
                          aOnProgress: TGamelistProgressCallback ): TObjectList<TGamelistResult>;
 
 implementation
 
 uses
-   System.SysUtils, System.IOUtils,
-   Constantes, GamelistParser;
+   System.SysUtils,
+   System.IOUtils,
+   System.StrUtils,
+   BiosParser,
+   Constantes,
+   GamelistParser;
 
 function checkGamelists( const aRomsDir: string;
+                         const aBiosJsonPath: string;
                          aOnProgress: TGamelistProgressCallback ): TObjectList<TGamelistResult>;
 
-   function getRomFiles( const aDir: string ): TArray<string>;
+   function getRomFiles( const aDir: string;
+                         const aBiosFiles: TArray<string> ): TArray<string>;
    begin
       var _list:= TList<string>.Create;
       try
-         for var _f in TDirectory.GetFiles( aDir ) do
-            if ( LowerCase( TPath.GetExtension( _f ) ) <> cstXmlExtension ) then
+         for var _f in TDirectory.GetFiles( aDir ) do begin
+            var _ext:= LowerCase( TPath.GetExtension( _f ) );
+            var _name:= LowerCase( TPath.GetFileName( _f ) );
+            if ( IndexStr( _ext, cstExcludedRomExtensions ) < 0 ) and
+               ( IndexStr( _name, aBiosFiles ) < 0 ) then
                _list.Add( _f );
+         end;
          Result:= _list.ToArray;
       finally
          _list.Free;
@@ -58,6 +69,15 @@ begin
    if ( not TDirectory.Exists( aRomsDir ) ) then
          Exit;
 
+   var _biosFiles: TArray<string>;
+   if TFile.Exists( aBiosJsonPath ) then begin
+      var _json:= TFile.ReadAllText( aBiosJsonPath, TEncoding.UTF8 );
+      var _entries:= parseBiosJson( _json );
+      for var _s in _entries do
+         for var _f in _s.files do
+            _biosFiles:= _biosFiles+[LowerCase( _f.fileName )];
+   end;
+
    var _systemDirs:= TDirectory.GetDirectories( aRomsDir );
    var _total:= Length( _systemDirs );
 
@@ -69,8 +89,18 @@ begin
          aOnProgress( _systemName, Succ( ii ), _total );
 
       var _gamelistPath:= TPath.Combine( _systemDir, cstGamelistFile );
-      if ( not TFile.Exists( _gamelistPath ) ) then
+      if ( not TFile.Exists( _gamelistPath ) ) then begin
+         var _romFiles:= getRomFiles( _systemDir, _biosFiles );
+         if ( Length( _romFiles ) > 0 ) then begin
+            var _result:= TGamelistResult.Create;
+            _result.systemName:= _systemName;
+            _result.romDir:= _systemDir;
+            _result.totalRoms:= Length( _romFiles );
+            _result.unscrapedROMs:= _romFiles;
+            Result.Add( _result );
+         end;
          Continue;
+      end;
 
       var _result:= parseGamelist( _systemDir, _systemName );
 
@@ -94,7 +124,7 @@ begin
          end;
 
          // Count total ROMs on disk
-         var _romFiles:= getRomFiles( _systemDir );
+         var _romFiles:= getRomFiles( _systemDir, _biosFiles );
          _result.totalRoms:= Length( _romFiles );
 
          // Check unscraped ROMs

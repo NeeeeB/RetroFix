@@ -15,7 +15,7 @@ resourcestring
    rstOrphansNb = 'Orphans (%d)';
    rstNoMediaNb = 'No media (%d)';
    rstStopWatchStr = 'Done in %.2f sec';
-   rstSystemStats = 'Games: %d | Scraped: %d | ROMs on disk: %d';
+   rstSystemStats = 'Games: %d | Scraped with medias: %d | ROMs on disk: %d';
    rstMissingRoms = 'ROMs referenced in the gamelist but missing on disk';
    rstUnscrapedRoms = 'ROM files present on disk but not referenced in the gamelist';
    rstNoMediaRoms = 'Games present in the gamelist but with no media at all';
@@ -61,6 +61,7 @@ resourcestring
    rstSSConnectionFailed = 'ScreenScraper connection failed : ';
    rstSSSystemMappingFailed = 'Failed to load systems mapping : ';
    rstGameScrapedSuccessfully = 'Game scraped successfully !';
+   rstScraping = 'Scraping';
 
 const
    {$INCLUDE 'screenscraper_credentials.inc'}
@@ -217,6 +218,8 @@ const
    cstDefaultThumbSrc    = cstSSMediaBox2D;
    cstThumbFileSuffix    = 'thumb';
 
+   cstExcludedRomExtensions: TArray<string> = ['.xml', '.ini', '.m3u', '.txt', '.dat', '.cfg', '.log', '.pak'];
+
    cstValidFolderColors: array[tValidFolder] of TColor =
       ( clGray,
         clGreen,
@@ -247,8 +250,8 @@ const
    cstHints: array[0..5] of string =
       ( rstMissingRoms,
         rstUnscrapedRoms,
-        rstNoMediaRoms,
         rstMissingMediaRoms,
+        rstNoMediaRoms,
         rstOrphanFiles,
         rstHashMismatch );
 

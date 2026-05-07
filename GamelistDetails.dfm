@@ -21,14 +21,13 @@ object frmGamelistDetails: TfrmGamelistDetails
     Left = 0
     Top = 0
     Width = 900
-    Height = 35
+    Height = 75
     Align = alTop
     BevelOuter = bvNone
     TabOrder = 1
-    ExplicitLeft = -8
     DesignSize = (
       900
-      35)
+      75)
     object lblSystem: TLabel
       Left = 8
       Top = 10
@@ -37,19 +36,21 @@ object frmGamelistDetails: TfrmGamelistDetails
       Caption = 'System :'
     end
     object lblStats: TLabel
-      Left = 266
-      Top = 9
+      Left = 8
+      Top = 39
       Width = 38
       Height = 15
       Caption = 'lblStats'
     end
     object lblScraping: TLabel
-      Left = 684
-      Top = 9
-      Width = 55
+      Left = 512
+      Top = 39
+      Width = 383
       Height = 15
       Anchors = [akTop, akRight]
+      AutoSize = False
       Caption = 'Scraping...'
+      EllipsisPosition = epEndEllipsis
       Visible = False
     end
     object cbxSystems: TComboBox
@@ -58,12 +59,13 @@ object frmGamelistDetails: TfrmGamelistDetails
       Width = 200
       Height = 23
       Style = csDropDownList
+      DropDownCount = 20
       TabOrder = 0
       OnChange = cbxSystemsChange
     end
     object btnVerifyHashes: TButton
-      Left = 266
-      Top = 5
+      Left = 8
+      Top = 35
       Width = 93
       Height = 25
       Caption = 'Verify Hashes'
@@ -73,9 +75,9 @@ object frmGamelistDetails: TfrmGamelistDetails
     end
     object pbScraping: TProgressBar
       AlignWithMargins = True
-      Left = 745
+      Left = 512
       Top = 6
-      Width = 150
+      Width = 383
       Height = 23
       Anchors = [akTop, akRight]
       Style = pbstMarquee
@@ -85,15 +87,17 @@ object frmGamelistDetails: TfrmGamelistDetails
   end
   object pgcMain: TPageControl
     Left = 0
-    Top = 35
+    Top = 75
     Width = 900
-    Height = 565
+    Height = 525
     ActivePage = tbsMissingRoms
     Align = alClient
     ParentShowHint = False
     ShowHint = True
     TabOrder = 0
     OnMouseMove = pgcMainMouseMove
+    ExplicitTop = 35
+    ExplicitHeight = 565
     object tbsMissingRoms: TTabSheet
       Caption = 'Missing ROMs'
       ParentShowHint = False
@@ -102,7 +106,7 @@ object frmGamelistDetails: TfrmGamelistDetails
         Left = 0
         Top = 0
         Width = 892
-        Height = 535
+        Height = 495
         Align = alClient
         Color = 4210752
         Columns = <
@@ -128,7 +132,7 @@ object frmGamelistDetails: TfrmGamelistDetails
         ViewStyle = vsReport
         OnContextPopup = lvContextPopup
         OnMouseMove = lvMouseMove
-        ExplicitLeft = 4
+        ExplicitHeight = 535
       end
     end
     object tbsUnscraped: TTabSheet
@@ -140,7 +144,7 @@ object frmGamelistDetails: TfrmGamelistDetails
         Left = 0
         Top = 0
         Width = 892
-        Height = 535
+        Height = 495
         Align = alClient
         Color = 4210752
         Columns = <
@@ -152,6 +156,7 @@ object frmGamelistDetails: TfrmGamelistDetails
             Caption = 'ROM file'
             Width = 500
           end>
+        MultiSelect = True
         GroupView = True
         ReadOnly = True
         RowSelect = True
@@ -172,7 +177,7 @@ object frmGamelistDetails: TfrmGamelistDetails
         Left = 0
         Top = 0
         Width = 892
-        Height = 535
+        Height = 495
         Align = alClient
         Color = 4210752
         Columns = <
@@ -202,6 +207,7 @@ object frmGamelistDetails: TfrmGamelistDetails
         ViewStyle = vsReport
         OnContextPopup = lvContextPopup
         OnMouseMove = lvMouseMove
+        ExplicitHeight = 535
       end
     end
     object tbsNoMedia: TTabSheet
@@ -213,7 +219,7 @@ object frmGamelistDetails: TfrmGamelistDetails
         Left = 0
         Top = 0
         Width = 892
-        Height = 535
+        Height = 495
         Align = alClient
         Color = 4210752
         Columns = <
@@ -228,6 +234,7 @@ object frmGamelistDetails: TfrmGamelistDetails
           item
             Caption = 'ROM Path'
           end>
+        MultiSelect = True
         GroupView = True
         ReadOnly = True
         RowSelect = True
@@ -248,7 +255,7 @@ object frmGamelistDetails: TfrmGamelistDetails
         Left = 0
         Top = 0
         Width = 892
-        Height = 535
+        Height = 495
         Align = alClient
         Color = 4210752
         Columns = <
@@ -271,6 +278,7 @@ object frmGamelistDetails: TfrmGamelistDetails
         ViewStyle = vsReport
         OnContextPopup = lvContextPopup
         OnMouseMove = lvMouseMove
+        ExplicitHeight = 535
       end
     end
     object tbsHashMismatch: TTabSheet
@@ -281,7 +289,7 @@ object frmGamelistDetails: TfrmGamelistDetails
         Left = 0
         Top = 0
         Width = 892
-        Height = 535
+        Height = 495
         Align = alClient
         Color = 4210752
         Columns = <
@@ -314,6 +322,7 @@ object frmGamelistDetails: TfrmGamelistDetails
         ViewStyle = vsReport
         OnContextPopup = lvContextPopup
         OnMouseMove = lvMouseMove
+        ExplicitHeight = 535
       end
     end
   end
@@ -330,7 +339,7 @@ object frmGamelistDetails: TfrmGamelistDetails
       OnClick = mniDeleteOrphanClick
     end
     object mniAddMissingMedia: TMenuItem
-      Caption = 'Add media'
+      Caption = 'Add media from disk'
       OnClick = mniAddMissingMediaClick
     end
     object mniCopyExpectedHash: TMenuItem
@@ -338,8 +347,12 @@ object frmGamelistDetails: TfrmGamelistDetails
       OnClick = mniCopyExpectedHashClick
     end
     object mniScrapeGame: TMenuItem
-      Caption = 'Scrape this game'
+      Caption = 'Scrape game(s)'
       OnClick = mniScrapeGameClick
+    end
+    object mniScrapeMedias: TMenuItem
+      Caption = 'Scrape media(s)'
+      OnClick = mniScrapeMediasClick
     end
   end
 end
