@@ -96,8 +96,6 @@ object frmGamelistDetails: TfrmGamelistDetails
     ShowHint = True
     TabOrder = 0
     OnMouseMove = pgcMainMouseMove
-    ExplicitTop = 35
-    ExplicitHeight = 565
     object tbsMissingRoms: TTabSheet
       Caption = 'Missing ROMs'
       ParentShowHint = False
@@ -132,7 +130,6 @@ object frmGamelistDetails: TfrmGamelistDetails
         ViewStyle = vsReport
         OnContextPopup = lvContextPopup
         OnMouseMove = lvMouseMove
-        ExplicitHeight = 535
       end
     end
     object tbsUnscraped: TTabSheet
@@ -197,6 +194,7 @@ object frmGamelistDetails: TfrmGamelistDetails
             Caption = 'Expected path'
             Width = 400
           end>
+        MultiSelect = True
         GroupView = True
         ReadOnly = True
         RowSelect = True
@@ -207,7 +205,6 @@ object frmGamelistDetails: TfrmGamelistDetails
         ViewStyle = vsReport
         OnContextPopup = lvContextPopup
         OnMouseMove = lvMouseMove
-        ExplicitHeight = 535
       end
     end
     object tbsNoMedia: TTabSheet
@@ -278,7 +275,6 @@ object frmGamelistDetails: TfrmGamelistDetails
         ViewStyle = vsReport
         OnContextPopup = lvContextPopup
         OnMouseMove = lvMouseMove
-        ExplicitHeight = 535
       end
     end
     object tbsHashMismatch: TTabSheet
@@ -322,7 +318,6 @@ object frmGamelistDetails: TfrmGamelistDetails
         ViewStyle = vsReport
         OnContextPopup = lvContextPopup
         OnMouseMove = lvMouseMove
-        ExplicitHeight = 535
       end
     end
   end
