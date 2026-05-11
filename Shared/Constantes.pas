@@ -66,6 +66,7 @@ resourcestring
    rstScrapeMediaSummary = '%d/%d media(s) downloaded successfully';
    rstGameNotFound   = 'Game not found : %s';
    rstQuotaExceeded  = 'ScreenScraper quota exceeded — scraping stopped';
+   rstUnexpectedError = 'Unexpected error : ';
 
 const
    {$INCLUDE 'screenscraper_credentials.inc'}

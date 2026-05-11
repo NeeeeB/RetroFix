@@ -794,13 +794,15 @@ begin
          var _current:= 0;
          for var _ref in aRefs do begin
             Inc( _current );
-            if FFormDestroyed or _quotaExceeded then Break;
+            if ( FFormDestroyed ) or
+               ( _quotaExceeded ) then
+               Break;
 
             var _romPath:= _ref.romPath;
             var _romDir:= _ref.gamelistResult.romDir;
             var _savedTotalRoms:= _ref.gamelistResult.totalRoms;
 
-            if not FSSSystemsMapping.ContainsKey( LowerCase( _ref.systemName ) ) then
+            if ( not FSSSystemsMapping.ContainsKey( LowerCase( _ref.systemName ) ) ) then
                Continue;
 
             var _systemId:= FSSSystemsMapping[ LowerCase( _ref.systemName ) ];
@@ -808,7 +810,7 @@ begin
             // Update label
             TThread.Queue( nil, procedure
             begin
-               if FFormDestroyed then Exit;
+               if ( FFormDestroyed ) then Exit;
                   lblScraping.Caption:= Format( '%d/%d ', [_current, _total] )+
                                         rstScraping + ' "' +
                                         TPath.GetFileNameWithoutExtension( _romPath ) + '"';
@@ -834,7 +836,7 @@ begin
                   _quotaExceeded:= True;
                   TThread.Queue( nil, procedure
                   begin
-                     if FFormDestroyed then Exit;
+                     if ( FFormDestroyed ) then Exit;
                      ShowMessage( rstQuotaExceeded );
                   end );
                end;
@@ -842,14 +844,14 @@ begin
                ssrNotFound:
                   TThread.Queue( nil, procedure
                   begin
-                     if FFormDestroyed then Exit;
+                     if ( FFormDestroyed ) then Exit;
                      _errors.Add( Format( rstGameNotFound, [TPath.GetFileName( _romPath )] ) );
                   end );
 
                ssrError:
                   TThread.Queue( nil, procedure
                   begin
-                     if FFormDestroyed then Exit;
+                     if ( FFormDestroyed ) then Exit;
                      _errors.Add( TPath.GetFileName( _romPath ) + ' : ' + _err );
                   end );
 
@@ -860,68 +862,68 @@ begin
                                                     cstXmlImage, TPath.Combine( _romDir, cstImages ),
                                                     mtImage, _romPath, FSettings.scrapeLanguage,
                                                     _mediaRegion, _gameInfo.medias, _err );
-                     if _gm.exists then _downloadedMedias.Add( _gm );
+                     if ( _gm.exists ) then _downloadedMedias.Add( _gm );
 
                      if ( FSettings.scrapeThumbSrc <> FSettings.scrapeImageSrc ) then begin
                         _gm:= downloadIfAvailable( FSettings.scrapeThumbSrc, cstXmlThumbnail,
                                                    cstThumbFileSuffix, TPath.Combine( _romDir, cstImages ),
                                                    mtThumbnail, _romPath, FSettings.scrapeLanguage,
                                                    _mediaRegion, _gameInfo.medias, _err );
-                        if _gm.exists then _downloadedMedias.Add( _gm );
+                        if ( _gm.exists ) then _downloadedMedias.Add( _gm );
                      end;
 
                      _gm:= downloadIfAvailable( FSettings.scrapeLogoSrc, cstXmlMarquee,
                                                 cstXmlMarquee, TPath.Combine( _romDir, cstImages ),
                                                 mtMarquee, _romPath, FSettings.scrapeLanguage,
                                                 _mediaRegion, _gameInfo.medias, _err );
-                     if _gm.exists then _downloadedMedias.Add( _gm );
+                     if ( _gm.exists ) then _downloadedMedias.Add( _gm );
 
-                     if FSettings.scrapeVideos then begin
+                     if ( FSettings.scrapeVideos ) then begin
                         _gm:= downloadIfAvailable( cstSSMediaVideo, cstXmlVideo,
                                                    cstXmlVideo, TPath.Combine( _romDir, cstVideos ),
                                                    mtVideo, _romPath, FSettings.scrapeLanguage,
                                                    _mediaRegion, _gameInfo.medias, _err );
-                        if _gm.exists then _downloadedMedias.Add( _gm );
+                        if ( _gm.exists ) then _downloadedMedias.Add( _gm );
                      end;
 
-                     if FSettings.scrapeFanart then begin
+                     if ( FSettings.scrapeFanart ) then begin
                         _gm:= downloadIfAvailable( cstSSMediaFanart, cstXmlFanart,
                                                    cstXmlFanart, TPath.Combine( _romDir, cstImages ),
                                                    mtFanart, _romPath, FSettings.scrapeLanguage,
                                                    _mediaRegion, _gameInfo.medias, _err );
-                        if _gm.exists then _downloadedMedias.Add( _gm );
+                        if ( _gm.exists ) then _downloadedMedias.Add( _gm );
                      end;
 
-                     if FSettings.scrapeBoxBack then begin
+                     if ( FSettings.scrapeBoxBack ) then begin
                         _gm:= downloadIfAvailable( cstSSMediaBoxBack, cstXmlBoxBack,
                                                    cstXmlBoxBack, TPath.Combine( _romDir, cstImages ),
                                                    mtBoxBack, _romPath, FSettings.scrapeLanguage,
                                                    _mediaRegion, _gameInfo.medias, _err );
-                        if _gm.exists then _downloadedMedias.Add( _gm );
+                        if ( _gm.exists ) then _downloadedMedias.Add( _gm );
                      end;
 
-                     if FSettings.scrapeManual then begin
+                     if ( FSettings.scrapeManual ) then begin
                         _gm:= downloadIfAvailable( cstSSMediaManual, cstXmlManual,
                                                    cstXmlManual, TPath.Combine( _romDir, cstManuals ),
                                                    mtManual, _romPath, FSettings.scrapeLanguage,
                                                    _mediaRegion, _gameInfo.medias, _err );
-                        if _gm.exists then _downloadedMedias.Add( _gm );
+                        if ( _gm.exists ) then _downloadedMedias.Add( _gm );
                      end;
 
-                     if FSettings.scrapeMap then begin
+                     if ( FSettings.scrapeMap ) then begin
                         _gm:= downloadIfAvailable( cstSSMediaMap, cstXmlMap,
                                                    cstXmlMap, TPath.Combine( _romDir, cstImages ),
                                                    mtMap, _romPath, FSettings.scrapeLanguage,
                                                    _mediaRegion, _gameInfo.medias, _err );
-                        if _gm.exists then _downloadedMedias.Add( _gm );
+                        if ( _gm.exists ) then _downloadedMedias.Add( _gm );
                      end;
 
-                     if FSettings.scrapeBezel then begin
+                     if ( FSettings.scrapeBezel ) then begin
                         _gm:= downloadIfAvailable( cstSSMediaBezel, cstXmlBezel,
                                                    cstXmlBezel, TPath.Combine( _romDir, cstImages ),
                                                    mtBezel, _romPath, FSettings.scrapeLanguage,
                                                    _mediaRegion, _gameInfo.medias, _err );
-                        if _gm.exists then _downloadedMedias.Add( _gm );
+                        if ( _gm.exists ) then _downloadedMedias.Add( _gm );
                      end;
 
                      var _entry:= Default( TGameEntry );
@@ -942,7 +944,7 @@ begin
                      _entry.md5         := fileMD5( _romPath );
                      _entry.crc32       := fileCRC32( _romPath );
                      _entry.medias      := _downloadedMedias.ToArray;
-                     _entry.isScraped   := _downloadedMedias.Count > 0;
+                     _entry.isScraped   := ( _downloadedMedias.Count > 0 );
 
                      addGameToGamelist( _romDir, _entry );
                   finally
@@ -952,23 +954,23 @@ begin
                   // Update FResults in main thread
                   TThread.Synchronize( nil, procedure
                   begin
-                     if FFormDestroyed then Exit;
+                     if ( FFormDestroyed ) then Exit;
 
                      var _unscrapedList:= TList<string>.Create;
                      try
-                        for var s in _ref.gamelistResult.unscrapedROMs do
-                           if s <> _romPath then
-                              _unscrapedList.Add( s );
+                        for var _s in _ref.gamelistResult.unscrapedROMs do
+                           if ( _s <> _romPath ) then
+                              _unscrapedList.Add( _s );
                         _ref.gamelistResult.unscrapedROMs:= _unscrapedList.ToArray;
                      finally
                         _unscrapedList.Free;
                      end;
 
                      var _newResult:= parseGamelist( _romDir, _ref.gamelistResult.systemName );
-                     _ref.gamelistResult.games        := _newResult.games;
-                     _ref.gamelistResult.missingROMs  := _newResult.missingROMs;
+                     _ref.gamelistResult.games:= _newResult.games;
+                     _ref.gamelistResult.missingROMs:= _newResult.missingROMs;
                      _ref.gamelistResult.missingMedias:= _newResult.missingMedias;
-                     _ref.gamelistResult.orphanMedias := _newResult.orphanMedias;
+                     _ref.gamelistResult.orphanMedias:= _newResult.orphanMedias;
                      _newResult.Free;
                      _ref.gamelistResult.totalRoms:= _savedTotalRoms;
                   end );
@@ -981,15 +983,15 @@ begin
          on E: Exception do
             TThread.Queue( nil, procedure
             begin
-               if FFormDestroyed then Exit;
-               ShowMessage( 'Unexpected error : ' + E.Message );
+               if ( FFormDestroyed ) then Exit;
+               ShowMessage( rstUnexpectedError + E.Message );
             end );
       end;
 
       // Single UI refresh at the end
       TThread.Queue( nil, procedure
       begin
-         if FFormDestroyed then Exit;
+         if ( FFormDestroyed ) then Exit;
          pbScraping.Style:= pbstMarquee;
          pbScraping.Position:= 0;
          FScrapingInProgress:= False;
