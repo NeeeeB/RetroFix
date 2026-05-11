@@ -8,10 +8,13 @@ uses
 function detectRomLangAndRegion( const aRomPath: string;
                                  const aSystemName: string ): TLangInfo;
 
+function shouldExtractHashFromArchive( const aSystemName: string ): Boolean;
+
 implementation
 
 uses
    System.SysUtils,
+   System.StrUtils,
    System.IOUtils,
    Constantes;
 
@@ -140,6 +143,11 @@ begin
 
    if ( Length( _languages ) > 0 ) then
       Result.language:= _languages[0];
+end;
+
+function shouldExtractHashFromArchive( const aSystemName: string ): Boolean;
+begin
+   Result:= ( IndexStr( LowerCase( aSystemName ), cNoExtractSystems ) < 0 );
 end;
 
 end.

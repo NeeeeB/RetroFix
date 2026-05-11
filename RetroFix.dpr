@@ -2,32 +2,32 @@
 
 uses
   Vcl.Forms,
-  Main in 'Main.pas' {frmMain},
   Vcl.Themes,
   Vcl.Styles,
-  Constantes in 'Constantes.pas',
-  Types in 'Types.pas',
-  BiosExtractor in 'BiosExtractor.pas',
-  BiosParser in 'BiosParser.pas',
-  BiosChecker in 'BiosChecker.pas',
-  HashUtils in 'HashUtils.pas',
-  BiosDetails in 'BiosDetails.pas' {Form1},
-  BiosExport in 'BiosExport.pas',
-  BiosUtils in 'BiosUtils.pas',
-  GamelistParser in 'GamelistParser.pas',
-  GamelistChecker in 'GamelistChecker.pas',
-  GamelistDetails in 'GamelistDetails.pas' {Form2},
-  ScreenScraperApi in 'ScreenScraperApi.pas',
-  EsSettingsReader in 'EsSettingsReader.pas',
-  Settings in 'Settings.pas' {Form3},
-  RomUtils in 'RomUtils.pas';
+  BiosDetails in 'Forms\BiosDetails.pas' {frmBiosDetails},
+  GamelistDetails in 'Forms\GamelistDetails.pas' {frmGamelistDetails},
+  Main in 'Forms\Main.pas' {frmMain},
+  Settings in 'Forms\Settings.pas' {frmSettings},
+  BiosChecker in 'Logic\BiosChecker.pas',
+  BiosExport in 'Logic\BiosExport.pas',
+  BiosExtractor in 'Logic\BiosExtractor.pas',
+  BiosParser in 'Logic\BiosParser.pas',
+  EsSettingsReader in 'Logic\EsSettingsReader.pas',
+  GamelistChecker in 'Logic\GamelistChecker.pas',
+  GamelistParser in 'Logic\GamelistParser.pas',
+  ScreenScraperApi in 'Network\ScreenScraperApi.pas',
+  BiosUtils in 'Shared\BiosUtils.pas',
+  Constantes in 'Shared\Constantes.pas',
+  HashUtils in 'Shared\HashUtils.pas',
+  RomUtils in 'Shared\RomUtils.pas',
+  Types in 'Shared\Types.pas';
 
 {$R *.res}
 
 begin
   Application.Initialize;
   Application.MainFormOnTaskbar := True;
-  TStyleManager.TrySetStyle('Charcoal Dark Slate');
   Application.CreateForm(TfrmMain, frmMain);
+  TStyleManager.TrySetStyle('Charcoal Dark Slate');
   Application.Run;
 end.

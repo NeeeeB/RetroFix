@@ -4,7 +4,7 @@
         <ProjectVersion>20.3</ProjectVersion>
         <FrameworkType>VCL</FrameworkType>
         <Base>True</Base>
-        <Config Condition="'$(Config)'==''">Debug</Config>
+        <Config Condition="'$(Config)'==''">Release</Config>
         <Platform Condition="'$(Platform)'==''">Win64</Platform>
         <ProjectName Condition="'$(ProjectName)'==''">RetroFix</ProjectName>
         <TargetedPlatforms>3</TargetedPlatforms>
@@ -72,7 +72,7 @@
         <UWP_DelphiLogo150>$(BDS)\bin\Artwork\Windows\UWP\delphi_UwpDefault_150.png</UWP_DelphiLogo150>
         <SanitizedProjectName>RetroFix</SanitizedProjectName>
         <Custom_Styles>&quot;Charcoal Dark Slate|VCLSTYLE|$(BDSCOMMONDIR)\Styles\CharcoalDarkSlate.vsf&quot;</Custom_Styles>
-        <DCC_UnitSearchPath>.\Neslib;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+        <DCC_UnitSearchPath>.\Neslib;.\Forms;.\Logic;.\Network;.\Shared;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
         <VerInfo_Locale>1036</VerInfo_Locale>
         <VerInfo_Keys>CompanyName=;FileDescription=$(MSBuildProjectName);FileVersion=1.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProgramID=com.embarcadero.$(MSBuildProjectName);ProductName=$(MSBuildProjectName);ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
     </PropertyGroup>
@@ -112,6 +112,8 @@
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_1_Win64)'!=''">
         <AppDPIAwarenessMode>PerMonitorV2</AppDPIAwarenessMode>
+        <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
+        <VerInfo_Locale>1033</VerInfo_Locale>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_2)'!=''">
         <DCC_LocalDebugSymbols>false</DCC_LocalDebugSymbols>
@@ -132,35 +134,35 @@
         <DelphiCompile Include="$(MainSource)">
             <MainSource>MainSource</MainSource>
         </DelphiCompile>
-        <DCCReference Include="Main.pas">
+        <DCCReference Include="Forms\BiosDetails.pas">
+            <Form>frmBiosDetails</Form>
+            <FormType>dfm</FormType>
+        </DCCReference>
+        <DCCReference Include="Forms\GamelistDetails.pas">
+            <Form>frmGamelistDetails</Form>
+            <FormType>dfm</FormType>
+        </DCCReference>
+        <DCCReference Include="Forms\Main.pas">
             <Form>frmMain</Form>
             <FormType>dfm</FormType>
         </DCCReference>
-        <DCCReference Include="Constantes.pas"/>
-        <DCCReference Include="Types.pas"/>
-        <DCCReference Include="BiosExtractor.pas"/>
-        <DCCReference Include="BiosParser.pas"/>
-        <DCCReference Include="BiosChecker.pas"/>
-        <DCCReference Include="HashUtils.pas"/>
-        <DCCReference Include="BiosDetails.pas">
-            <Form>Form1</Form>
+        <DCCReference Include="Forms\Settings.pas">
+            <Form>frmSettings</Form>
             <FormType>dfm</FormType>
         </DCCReference>
-        <DCCReference Include="BiosExport.pas"/>
-        <DCCReference Include="BiosUtils.pas"/>
-        <DCCReference Include="GamelistParser.pas"/>
-        <DCCReference Include="GamelistChecker.pas"/>
-        <DCCReference Include="GamelistDetails.pas">
-            <Form>Form2</Form>
-            <FormType>dfm</FormType>
-        </DCCReference>
-        <DCCReference Include="ScreenScraperApi.pas"/>
-        <DCCReference Include="EsSettingsReader.pas"/>
-        <DCCReference Include="Settings.pas">
-            <Form>Form3</Form>
-            <FormType>dfm</FormType>
-        </DCCReference>
-        <DCCReference Include="RomUtils.pas"/>
+        <DCCReference Include="Logic\BiosChecker.pas"/>
+        <DCCReference Include="Logic\BiosExport.pas"/>
+        <DCCReference Include="Logic\BiosExtractor.pas"/>
+        <DCCReference Include="Logic\BiosParser.pas"/>
+        <DCCReference Include="Logic\EsSettingsReader.pas"/>
+        <DCCReference Include="Logic\GamelistChecker.pas"/>
+        <DCCReference Include="Logic\GamelistParser.pas"/>
+        <DCCReference Include="Network\ScreenScraperApi.pas"/>
+        <DCCReference Include="Shared\BiosUtils.pas"/>
+        <DCCReference Include="Shared\Constantes.pas"/>
+        <DCCReference Include="Shared\HashUtils.pas"/>
+        <DCCReference Include="Shared\RomUtils.pas"/>
+        <DCCReference Include="Shared\Types.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>
@@ -182,11 +184,12 @@
                     <Source Name="MainSource">RetroFix.dpr</Source>
                 </Source>
                 <Excluded_Packages>
-                    <Excluded_Packages Name="O:\Sources\desktop_client\bind\GLScene_DT290.bpl">GLScene Engine</Excluded_Packages>
+                    <Excluded_Packages Name="O:\Sources\desktop_client\bind\GLScene_DT290.bpl">GLScene OpenGL 3D library</Excluded_Packages>
                     <Excluded_Packages Name="O:\Sources\desktop_client\bind\html_compDT290.bpl">(sans titre)</Excluded_Packages>
                     <Excluded_Packages Name="O:\Sources\desktop_client\bind\madExceptIdeDT290.bpl">madExceptIde 1.1.0  -  www.madshi.net</Excluded_Packages>
                     <Excluded_Packages Name="O:\Sources\desktop_client\bind\madExceptVclDT290.bpl">madExceptVcl 2.1.0  -  www.madshi.net</Excluded_Packages>
                     <Excluded_Packages Name="O:\Sources\desktop_client\bind\madExceptWizardDT290.bpl">madExceptWizard 3.1.8  -  www.madshi.net</Excluded_Packages>
+                    <Excluded_Packages Name="O:\Sources\desktop_client\bind\madExceptWizard_.bpl">madExceptWizard 3.1.8  -  www.madshi.net</Excluded_Packages>
                     <Excluded_Packages Name="O:\Sources\desktop_client\bind\OtherComponentsDT290.bpl">(sans titre)</Excluded_Packages>
                     <Excluded_Packages Name="O:\Sources\desktop_client\bind\QR506Design290.bpl">QuickReport 5.06 Components</Excluded_Packages>
                     <Excluded_Packages Name="O:\Sources\desktop_client\bind\RaizeComponentsVclDb_Design290.bpl">(sans titre)</Excluded_Packages>

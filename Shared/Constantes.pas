@@ -62,6 +62,10 @@ resourcestring
    rstSSSystemMappingFailed = 'Failed to load systems mapping : ';
    rstGameScrapedSuccessfully = 'Game scraped successfully !';
    rstScraping = 'Scraping';
+   rstScrapeSummary  = '%d/%d game(s) scraped successfully';
+   rstScrapeMediaSummary = '%d/%d media(s) downloaded successfully';
+   rstGameNotFound   = 'Game not found : %s';
+   rstQuotaExceeded  = 'ScreenScraper quota exceeded — scraping stopped';
 
 const
    {$INCLUDE 'screenscraper_credentials.inc'}
@@ -168,6 +172,7 @@ const
    cstSSRomTaille        = '&romtaille=';
    cstSSMd5              = '&md5=';
    cstSSCrc              = '&crc=';
+   cstSSSha1             = '&sha1=';
    cstSSRegionWor        = 'wor';
    cstSSJeuIntrouvable   = 'Jeu introuvable';
    cstSSNotFound         = 'not found';
@@ -358,6 +363,17 @@ const
       ( tokens: 'in,india';                        lang: 'in'; region: 'in' ) );
 
    cstJapanDefaults = 'pc88|pc98|pcenginecd|pcfx|satellaview|sg1000|sufami|wswan|wswanc|x68000';
+
+   cNoExtractSystems: TArray<string> =
+      [ 'arcade',
+        'mame',
+        'fbneo',
+        'neogeo',
+        'daphne',
+        'lutro',
+        'dreamcast',
+        'atomiswave',
+        'naomi' ];
 
 implementation
 

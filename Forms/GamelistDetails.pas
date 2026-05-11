@@ -783,6 +783,9 @@ begin
    pbScraping.Visible:= True;
    lblScraping.Visible:= True;
 
+   var _successCount:= 0;
+   var _errors:= TStringList.Create;
+
    TTask.Run( procedure
    begin
       var _quotaExceeded:= False;
@@ -822,7 +825,7 @@ begin
             var _gameInfo: TSSGameInfo;
             var _err: string;
             var _result:= getGameInfo( FSettings.ssUserId, FSettings.ssPassword,
-                                       _systemId, _romPath,
+                                       _systemId, _ref.systemName, _romPath,
                                        FSettings.scrapeLanguage, _mediaRegion,
                                        _gameInfo, _err );
 
@@ -832,7 +835,7 @@ begin
                   TThread.Queue( nil, procedure
                   begin
                      if FFormDestroyed then Exit;
-                     ShowMessage( 'ScreenScraper quota exceeded. Try again later.' );
+                     ShowMessage( rstQuotaExceeded );
                   end );
                end;
 
@@ -840,14 +843,14 @@ begin
                   TThread.Queue( nil, procedure
                   begin
                      if FFormDestroyed then Exit;
-                     ShowMessage( 'Game not found : ' + TPath.GetFileName( _romPath ) );
+                     _errors.Add( Format( rstGameNotFound, [TPath.GetFileName( _romPath )] ) );
                   end );
 
                ssrError:
                   TThread.Queue( nil, procedure
                   begin
                      if FFormDestroyed then Exit;
-                     ShowMessage( 'ScreenScraper error : ' + _err );
+                     _errors.Add( TPath.GetFileName( _romPath ) + ' : ' + _err );
                   end );
 
                ssrOK: begin
@@ -969,6 +972,8 @@ begin
                      _newResult.Free;
                      _ref.gamelistResult.totalRoms:= _savedTotalRoms;
                   end );
+
+                  Inc( _successCount );
                end;
             end;
          end;
@@ -995,6 +1000,12 @@ begin
          updateStats( getFilteredResults );
          if Assigned( FOnSummaryUpdate ) then
             FOnSummaryUpdate( Self );
+
+         var _msg:= Format( rstScrapeSummary, [_successCount, _total] );
+         if ( _errors.Count > 0 ) then
+            _msg:= _msg + sLineBreak + _errors.Text;
+         ShowMessage( _msg );
+         _errors.Free;
       end );
    end );
 end;
@@ -1034,16 +1045,21 @@ begin
    for var _key in _grouped.Keys do
       _romPaths.Add( _key );
 
-   if ( _romPaths.Count > 1 ) then begin
+   var _total:= _romPaths.Count;
+
+   if ( _total > 1 ) then begin
       pbScraping.Style:= pbstNormal;
-      pbScraping.Max:= _romPaths.Count;
+      pbScraping.Max:= _total;
       pbScraping.Position:= 0;
    end else
       pbScraping.Style:= pbstMarquee;
 
+   var _mediasDownloaded:= 0;
+   var _mediasTotal:= 0;
+   var _errors:= TStringList.Create;
+
    TTask.Run( procedure
    begin
-      var _total:= _romPaths.Count;
       var _current:= 0;
       var _quotaExceeded:= False;
 
@@ -1055,6 +1071,8 @@ begin
             var _refsForRom:= _grouped[_romPath];
             var _ref0:= _refsForRom[0]; // Use first ref for common data
             var _romDir:= _ref0.gamelistResult.romDir;
+
+            Inc( _mediasTotal, _refsForRom.Count );
 
             if ( not FSSSystemsMapping.ContainsKey( LowerCase( _ref0.systemName ) ) ) then
                Continue;
@@ -1076,7 +1094,7 @@ begin
             var _gameInfo: TSSGameInfo;
             var _err: string;
             var _result:= getGameInfo( FSettings.ssUserId, FSettings.ssPassword,
-                                       _systemId, _romPath,
+                                       _systemId, _ref0.systemName, _romPath,
                                        FSettings.scrapeLanguage, _mediaRegion,
                                        _gameInfo, _err );
 
@@ -1086,7 +1104,7 @@ begin
                   TThread.Queue( nil, procedure
                   begin
                      if ( FFormDestroyed ) then Exit;
-                     ShowMessage( 'ScreenScraper quota exceeded. Try again later.' );
+                     ShowMessage( rstQuotaExceeded );
                   end );
                end;
 
@@ -1094,14 +1112,14 @@ begin
                   TThread.Queue( nil, procedure
                   begin
                      if ( FFormDestroyed ) then Exit;
-                     ShowMessage( 'Game not found : ' + TPath.GetFileName( _romPath ) );
+                     _errors.Add( Format( rstGameNotFound, [TPath.GetFileName( _romPath )] ) );
                   end );
 
                ssrError:
                   TThread.Queue( nil, procedure
                   begin
                      if ( FFormDestroyed ) then Exit;
-                     ShowMessage( 'ScreenScraper error : ' + _err );
+                     _errors.Add( TPath.GetFileName( _romPath ) + ' : ' + _err );
                   end );
 
                ssrOK: begin
@@ -1168,6 +1186,7 @@ begin
                                                     _gameInfo.medias, _err );
 
                      if ( _gm.exists ) then begin
+                        Inc( _mediasDownloaded );
                         var _mediaPath:= _ref.mediaPath;
                         TThread.Synchronize( nil, procedure
                         begin
@@ -1185,7 +1204,6 @@ begin
                            var _newResult:= parseGamelist( _romDir, _ref.gamelistResult.systemName );
                            _ref.gamelistResult.games:= _newResult.games;
                            _ref.gamelistResult.missingROMs:= _newResult.missingROMs;
-                           _ref.gamelistResult.missingMedias:= _newResult.missingMedias;
                            _ref.gamelistResult.orphanMedias:= _newResult.orphanMedias;
                            _newResult.Free;
                         end );
@@ -1217,6 +1235,12 @@ begin
          updateStats( getFilteredResults );
          if ( Assigned( FOnSummaryUpdate ) ) then
             FOnSummaryUpdate( Self );
+         var _msg:= Format( rstScrapeMediaSummary, [_mediasDownloaded, _mediasTotal] );
+         if ( _errors.Count > 0 ) then
+            _msg:= _msg + sLinebreak + _errors.Text;
+         ShowMessage( _msg );
+         _errors.Free;
+
          // Free after UI update
          _grouped.Free;
          _romPaths.Free;

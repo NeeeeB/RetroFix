@@ -40,6 +40,13 @@ type
                         slJapanese,
                         slChinese );
 
+   TRomHashInfo = record
+      md5  : string;
+      crc32: string;
+      sha1: string;
+      size : Int64;
+   end;
+
    TSSMediaInfo = record
       mediaType: string;
       region   : string;

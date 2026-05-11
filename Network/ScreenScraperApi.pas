@@ -11,7 +11,8 @@ function loadSystemsMapping( const aSSId, aSSPassword: string;
                               out aError: string ): Boolean;
 
 function getGameInfo( const aSSId, aSSPassword: string;
-                      const aSystemId: Integer;
+                      aSystemId: Integer;
+                      const aSystemName: string;
                       const aRomPath: string;
                       const aLanguage: string;
                       const aRegion: string;
@@ -33,7 +34,7 @@ function findBestMedia( const aMedias: TArray<TSSMediaInfo>;
                         const aLanguage: string;
                         const aRegion: string ): TSSMediaInfo;
 
-function getArcadeSystemName( const aSystemId: Integer ): string;
+function getArcadeSystemName( aSystemId: Integer ): string;
 
 implementation
 
@@ -47,6 +48,7 @@ uses
    System.NetEncoding,
    System.JSON,
    HashUtils,
+   RomUtils,
    Constantes;
 
 function buildBaseParams( const aSSId, aSSPassword: string ): string;
@@ -84,7 +86,7 @@ begin
 end;
 
 function checkResponseSuccess( const aJson: TJSONObject;
-                                out aError: string ): Boolean;
+                               out aError: string ): Boolean;
 begin
    var _header:= aJson.GetValue<TJSONObject>( cstSSHeader, nil );
    if ( _header = nil ) then begin
@@ -157,7 +159,8 @@ begin
 end;
 
 function getGameInfo( const aSSId, aSSPassword: string;
-                      const aSystemId: Integer;
+                      aSystemId: Integer;
+                      const aSystemName: string;
                       const aRomPath: string;
                       const aLanguage: string;
                       const aRegion: string;
@@ -174,9 +177,8 @@ begin
    end;
 
    // Compute hashes and file size for ROM identification
-   var _md5:= fileMD5( aRomPath );
-   var _crc32:= fileCRC32( aRomPath );
-   var _size:= TFile.GetSize( aRomPath );
+   var _extract:= shouldExtractHashFromArchive( aSystemName );
+   var _hashInfo:= getRomHashInfo( aRomPath, _extract );
    var _romName:= TPath.GetFileName( aRomPath );
 
    var _url:= cstSSBaseUrl+cstSSApiGameInfo+
@@ -184,9 +186,10 @@ begin
               cstSSSystemeId+IntToStr( aSystemId )+
               cstSSRomType+
               cstSSRomNom+TNetEncoding.URL.Encode( _romName )+
-              cstSSRomTaille+IntToStr( _size )+
-              cstSSMd5+_md5+
-              cstSSCrc+_crc32;
+              cstSSRomTaille+IntToStr( _hashInfo.size )+
+              cstSSMd5+_hashInfo.md5+
+              cstSSCrc+_hashInfo.crc32+
+              cstSSSha1+_hashInfo.sha1;
 
    var _response: string;
    if ( not httpGet( _url, _response, aError ) ) then
@@ -194,7 +197,12 @@ begin
 
    var _json:= TJSONObject.ParseJSONValue( _response ) as TJSONObject;
    if ( _json = nil ) then begin
-      aError:= 'Invalid JSON response';
+      if ( _response.Contains( 'introuvable' ) ) or
+         ( _response.Contains( 'not found' ) ) or
+         ( _response.Contains( 'non trouvée' ) ) then
+         Result:= ssrNotFound
+      else
+         aError:= 'Invalid JSON response';
       Exit;
    end;
    try
@@ -555,7 +563,7 @@ begin
          end;
 end;
 
-function getArcadeSystemName( const aSystemId: Integer ): string;
+function getArcadeSystemName( aSystemId: Integer ): string;
 begin
    Result:= '';
    for var _entry in cstArcadeSystems do
