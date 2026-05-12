@@ -84,6 +84,16 @@ object frmGamelistDetails: TfrmGamelistDetails
       TabOrder = 2
       Visible = False
     end
+    object btnCancelScrape: TButton
+      Left = 431
+      Top = 5
+      Width = 75
+      Height = 25
+      Caption = 'Cancel'
+      TabOrder = 3
+      Visible = False
+      OnClick = btnCancelScrapeClick
+    end
   end
   object pgcMain: TPageControl
     Left = 0
@@ -120,6 +130,7 @@ object frmGamelistDetails: TfrmGamelistDetails
             Caption = 'Expected path'
             Width = 400
           end>
+        MultiSelect = True
         GroupView = True
         ReadOnly = True
         RowSelect = True
@@ -348,6 +359,10 @@ object frmGamelistDetails: TfrmGamelistDetails
     object mniScrapeMedias: TMenuItem
       Caption = 'Scrape media(s)'
       OnClick = mniScrapeMediasClick
+    end
+    object mniDeleteMissingROM: TMenuItem
+      Caption = 'Remove from Gamelist'
+      OnClick = mniDeleteMissingROMClick
     end
   end
 end

@@ -26,19 +26,19 @@ type
                   mtWheel,
                   mtMix );
 
-    TSSResult = ( ssrOK,
-                  ssrNotFound,
-                  ssrError,
-                  ssrQuotaExceeded );
+   TSSResult = ( ssrOK,
+                 ssrNotFound,
+                 ssrError,
+                 ssrQuotaExceeded );
 
-    TScrapeLanguage = ( slEnglish,
-                        slFrench,
-                        slGerman,
-                        slSpanish,
-                        slItalian,
-                        slPortuguese,
-                        slJapanese,
-                        slChinese );
+   TScrapeLanguage = ( slEnglish,
+                       slFrench,
+                       slGerman,
+                       slSpanish,
+                       slItalian,
+                       slPortuguese,
+                       slJapanese,
+                       slChinese );
 
    TRomHashInfo = record
       md5  : string;

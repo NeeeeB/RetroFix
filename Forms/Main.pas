@@ -420,6 +420,7 @@ begin
    for var _r in aResults do begin
       Inc( Result.totalSystems );
       Inc( Result.totalGames, Length( _r.games ) );
+      Inc( Result.totalGames, Length( _r.unscrapedROMs ) );
       Inc( Result.totalMissingROMs, Length( _r.missingROMs ) );
       Inc( Result.totalUnscraped, Length( _r.unscrapedROMs ) );
       Inc( Result.totalMissingMedias, Length( _r.missingMedias ) );

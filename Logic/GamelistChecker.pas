@@ -13,6 +13,8 @@ type
 function checkGamelists( const aRomsDir: string;
                          const aBiosJsonPath: string;
                          aOnProgress: TGamelistProgressCallback ): TObjectList<TGamelistResult>;
+function checkOrphanMedias( const aRomDir: string;
+                            const aGames: TArray<TGameEntry> ): TArray<string>;
 
 implementation
 
@@ -23,6 +25,48 @@ uses
    BiosParser,
    Constantes,
    GamelistParser;
+
+function checkOrphanMedias( const aRomDir: string;
+                             const aGames: TArray<TGameEntry> ): TArray<string>;
+
+   function getMediaFiles( const aDir: string ): TArray<string>;
+   begin
+      var _list:= TList<string>.Create;
+      try
+         for var _subDir in [cstImages, cstVideos, cstManuals] do begin
+            var _path:= TPath.Combine( aDir, _subDir );
+            if ( TDirectory.Exists( _path ) ) then
+               for var _f in TDirectory.GetFiles( _path ) do
+                  _list.Add( _f );
+         end;
+         Result:= _list.ToArray;
+      finally
+         _list.Free;
+      end;
+   end;
+
+begin
+   // Build dictionary of referenced media paths for O(1) lookup
+   var _referencedMedias:= TDictionary<string, Boolean>.Create;
+   try
+      for var _game in aGames do
+         for var _media in _game.medias do
+            _referencedMedias.TryAdd( LowerCase( _media.path ), True );
+
+      var _orphanMedias:= TList<string>.Create;
+      try
+         var _mediaFiles:= getMediaFiles( aRomDir );
+         for var _mediaFile in _mediaFiles do
+            if ( not _referencedMedias.ContainsKey( LowerCase( _mediaFile ) ) ) then
+               _orphanMedias.Add( _mediaFile );
+         Result:= _orphanMedias.ToArray;
+      finally
+         _orphanMedias.Free;
+      end;
+   finally
+      _referencedMedias.Free;
+   end;
+end;
 
 function checkGamelists( const aRomsDir: string;
                          const aBiosJsonPath: string;
@@ -39,24 +83,6 @@ function checkGamelists( const aRomsDir: string;
             if ( IndexStr( _ext, cstExcludedRomExtensions ) < 0 ) and
                ( IndexStr( _name, aBiosFiles ) < 0 ) then
                _list.Add( _f );
-         end;
-         Result:= _list.ToArray;
-      finally
-         _list.Free;
-      end;
-   end;
-
-   function getMediaFiles( const aDir: string ): TArray<string>;
-   var
-      _list: TList<string>;
-   begin
-      _list:= TList<string>.Create;
-      try
-         for var _subDir in [cstImages, cstVideos, cstManuals] do begin
-            var _path:= TPath.Combine( aDir, _subDir );
-            if ( TDirectory.Exists( _path ) ) then
-               for var _f in TDirectory.GetFiles( _path ) do
-                  _list.Add( _f );
          end;
          Result:= _list.ToArray;
       finally
@@ -162,16 +188,7 @@ begin
          end;
 
          // Check orphan medias
-         var _orphanMedias:= TList<string>.Create;
-         try
-            var _mediaFiles:= getMediaFiles( _systemDir );
-            for var _mediaFile in _mediaFiles do
-               if ( not _referencedMedias.ContainsKey( LowerCase( _mediaFile ) ) ) then
-                  _orphanMedias.Add( _mediaFile );
-            _result.orphanMedias:= _orphanMedias.ToArray;
-         finally
-            _orphanMedias.Free;
-         end;
+         _result.orphanMedias:= checkOrphanMedias( _systemDir, _result.games );
       finally
          _referencedMedias.Free;
       end;

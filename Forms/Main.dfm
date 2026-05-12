@@ -25,7 +25,6 @@ object frmMain: TfrmMain
     Align = alClient
     BevelOuter = bvNone
     TabOrder = 0
-    ExplicitHeight = 378
     object gbxActions: TGroupBox
       AlignWithMargins = True
       Left = 3
@@ -36,7 +35,6 @@ object frmMain: TfrmMain
       Caption = 'Actions'
       Enabled = False
       TabOrder = 0
-      ExplicitHeight = 372
       object gbxBios: TGroupBox
         AlignWithMargins = True
         Left = 5
@@ -221,7 +219,6 @@ object frmMain: TfrmMain
     Align = alBottom
     BevelOuter = bvNone
     TabOrder = 2
-    ExplicitTop = 431
     object lblProgress: TLabel
       Left = 0
       Top = 8

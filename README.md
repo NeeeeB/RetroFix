@@ -37,17 +37,19 @@ RetroFix is a utility for [Retrobat](https://www.retrobat.org/) that scans your 
 - Filter results by system
 - Add missing media files directly from the UI
 - Delete orphan media files directly from the UI (single or batch)
-- ROM hash verification (MD5 / CRC32) against values stored in the gamelist
+- Remove missing ROM entries from gamelist, with optional deletion of resulting orphan media files
+- ROM hash verification (MD5 / CRC32 / SHA1) against values stored in the gamelist
 - Copy expected hash to clipboard on mismatch
 
 ### ScreenScraper Integration
 - Scrape unscraped ROMs directly from the UI using [ScreenScraper](https://www.screenscraper.fr)
 - Scrape games with no media
 - Re-download missing media files for already scraped games
-- Single or batch scraping with progress indicator
+- Single or batch scraping with progress indicator and cancel button
 - Automatically reads your scraping preferences from Retrobat (`es_settings.cfg`): image source, logo source, box source, language, region, and media options (videos, fanart, box back, manual, map, bezel)
 - Respects your preferred language and region for metadata and media selection
 - Language and region detection from ROM filename, consistent with Retrobat's behavior
+- ROM identification uses MD5/CRC32/SHA1 hashes, extracted from inside ZIP archives when appropriate (consistent with Retrobat's behavior)
 - Writes scraped data directly to `gamelist.xml` in Retrobat format
 - Configurable scraping options via the Settings dialog
 
@@ -81,7 +83,7 @@ Your ScreenScraper username and password are automatically read from your Retrob
 3. Click **Scan BIOS** to verify your BIOS files
 4. Click **Scan Gamelists** to analyze your game collection
 5. Click **Details...** to open the detailed report for each module
-6. Right-click on items in the **Unscraped**, **No media** or **Missing medias** tabs to scrape games or download missing media
+6. Right-click on items in the **Unscraped**, **No media**, **Missing medias** or **Missing ROMs** tabs to take action
 
 ---
 

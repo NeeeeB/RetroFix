@@ -38,6 +38,8 @@ type
       pbScraping: TProgressBar;
       lblScraping: TLabel;
       mniScrapeMedias: TMenuItem;
+      btnCancelScrape: TButton;
+      mniDeleteMissingROM: TMenuItem;
       procedure FormCreate( Sender: TObject );
       procedure cbxSystemsChange( Sender: TObject );
       procedure pgcMainMouseMove( Sender: TObject; Shift: TShiftState; X, Y: Integer );
@@ -53,6 +55,8 @@ type
       procedure mniCopyExpectedHashClick(Sender: TObject);
       procedure mniScrapeGameClick(Sender: TObject);
       procedure mniScrapeMediasClick(Sender: TObject);
+      procedure btnCancelScrapeClick(Sender: TObject);
+      procedure mniDeleteMissingROMClick(Sender: TObject);
 
    private
       FResults: TObjectList<TGamelistResult>;
@@ -64,7 +68,7 @@ type
       FSSSystemsMapping: TDictionary<string, Integer>;
       FSSUserInfo: TSSUserInfo;
       FSettings: TSettings;
-      FScrapingInProgress: Boolean;
+      FScrapingInProgress, FCancelScraping: Boolean;
       procedure populateComboBox;
       procedure populateListViews;
       procedure populateMissingRoms( const aResults: TArray<TGamelistResult> );
@@ -116,7 +120,9 @@ uses
    HashUtils,
    RomUtils,
    ScreenScraperApi,
-   GamelistParser;
+   GamelistParser,
+   GamelistChecker,
+   ConfirmDelete;
 
 {$R *.dfm}
 
@@ -240,6 +246,10 @@ begin
                              ( lvwMissingMedias.Selected <> nil );
    mniScrapeMedias.Enabled:= mniScrapeMedias.Visible and
                              ( not FScrapingInProgress );
+
+   mniDeleteMissingROM.Visible:= ( pgcMain.ActivePage = tbsMissingRoms ) and
+                                 ( lvwMissingRoms.Selected <> nil );
+   mniDeleteMissingROM.Enabled:= mniDeleteMissingROM.Visible;
 end;
 
 procedure TfrmGamelistDetails.populateComboBox;
@@ -267,6 +277,12 @@ begin
    for var _r in FResults do
       if ( _r.systemName = _systemName ) then
          Result:= Result+[_r];
+end;
+
+procedure TfrmGamelistDetails.btnCancelScrapeClick( Sender: TObject );
+begin
+   FCancelScraping:= True;
+   btnCancelScrape.Enabled:= False;
 end;
 
 procedure TfrmGamelistDetails.btnVerifyHashesClick( Sender: TObject );
@@ -688,6 +704,80 @@ begin
       Clipboard.AsText:= _hash;
 end;
 
+procedure TfrmGamelistDetails.mniDeleteMissingROMClick( Sender: TObject );
+begin
+   var _deleteOrphans: Boolean;
+   if ( lvwMissingRoms.SelCount = 0 ) or
+      ( not TfrmConfirmDelete.Execute( Format( rstDeleteMissingROMs, [lvwMissingRoms.SelCount] ),
+                                       _deleteOrphans ) ) then
+      Exit;
+
+   Screen.Cursor:= crHourGlass;
+   var _affectedResults:= TList<TGamelistResult>.Create;
+   try
+      var _item:= lvwMissingRoms.Selected;
+      while ( _item <> nil ) do begin
+         var _next:= lvwMissingRoms.GetNextItem( _item, sdAll, [isSelected] );
+         if ( _item.Data <> nil ) then begin
+            var _ref:= TGameEntryRef( _item.Data );
+            if removeGameFromGamelist( _ref.gamelistResult.romDir, _ref.romPath ) then begin
+               // Update FResults
+               var _gamesList:= TList<TGameEntry>.Create;
+               try
+                  for var _g in _ref.gamelistResult.games do
+                     if ( _g.romPath <> _ref.romPath ) then
+                        _gamesList.Add( _g );
+                  _ref.gamelistResult.games:= _gamesList.ToArray;
+               finally
+                  _gamesList.Free;
+               end;
+               var _missingList:= TList<string>.Create;
+               try
+                  for var _s in _ref.gamelistResult.missingROMs do
+                     if ( _s <> _ref.romPath ) then
+                        _missingList.Add( _s );
+                  _ref.gamelistResult.missingROMs:= _missingList.ToArray;
+               finally
+                  _missingList.Free;
+               end;
+               if ( not _affectedResults.Contains( _ref.gamelistResult ) ) then
+                  _affectedResults.Add( _ref.gamelistResult );
+
+               if ( _deleteOrphans ) then begin
+                  var _romName:= TPath.GetFileNameWithoutExtension( _ref.romPath );
+                  for var _subDir in [cstImages, cstVideos, cstManuals] do begin
+                     var _path:= TPath.Combine( _ref.gamelistResult.romDir, _subDir );
+                     if ( TDirectory.Exists( _path ) ) then
+                        for var _f in TDirectory.GetFiles( _path ) do
+                           if ( TPath.GetFileName( _f ).StartsWith( _romName ) ) then
+                              TFile.Delete( _f );
+                  end;
+               end;
+
+               _item.Free;
+
+            end;
+         end;
+         _item:= _next;
+      end;
+      // Reparse affected gamelists to update orphans and missing medias
+      for var _r in _affectedResults do begin
+         var _newResult:= parseGamelist( _r.romDir, _r.systemName );
+         _r.games:= _newResult.games;
+         _r.missingMedias:= _newResult.missingMedias;
+         _r.orphanMedias:= checkOrphanMedias( _r.romDir, _r.games );
+         _newResult.Free;
+      end;
+   finally
+      _affectedResults.Free;
+      Screen.Cursor:= crDefault;
+   end;
+   populateListViews;
+   updateStats( getFilteredResults );
+   if ( Assigned( FOnSummaryUpdate ) ) then
+      FOnSummaryUpdate( Self );
+end;
+
 procedure TfrmGamelistDetails.mniDeleteOrphanClick( Sender: TObject );
 begin
    if ( lvwOrphans.SelCount = 0 ) then
@@ -773,15 +863,23 @@ begin
    var _total:= Length( aRefs );
 
    if ( _total > 1 ) then begin
+      // shitty hack to refresh the progressBar
+      pbScraping.Style:= pbstMarquee;
       pbScraping.Style:= pbstNormal;
       pbScraping.Max:= _total;
       pbScraping.Position:= 0;
-   end else
+   end else begin
+      pbScraping.Style:= pbstNormal;
       pbScraping.Style:= pbstMarquee;
+   end;
 
    FScrapingInProgress:= True;
    pbScraping.Visible:= True;
    lblScraping.Visible:= True;
+
+   FCancelScraping:= False;
+   btnCancelScrape.Visible:= True;
+   btnCancelScrape.Enabled:= True;
 
    var _successCount:= 0;
    var _errors:= TStringList.Create;
@@ -794,8 +892,7 @@ begin
          var _current:= 0;
          for var _ref in aRefs do begin
             Inc( _current );
-            if ( FFormDestroyed ) or
-               ( _quotaExceeded ) then
+            if ( FFormDestroyed ) or ( _quotaExceeded ) or ( FCancelScraping ) then
                Break;
 
             var _romPath:= _ref.romPath;
@@ -968,7 +1065,6 @@ begin
 
                      var _newResult:= parseGamelist( _romDir, _ref.gamelistResult.systemName );
                      _ref.gamelistResult.games:= _newResult.games;
-                     _ref.gamelistResult.missingROMs:= _newResult.missingROMs;
                      _ref.gamelistResult.missingMedias:= _newResult.missingMedias;
                      _ref.gamelistResult.orphanMedias:= _newResult.orphanMedias;
                      _newResult.Free;
@@ -997,6 +1093,8 @@ begin
          FScrapingInProgress:= False;
          lblScraping.Visible:= False;
          pbScraping.Visible:= False;
+         btnCancelScrape.Visible:= False;
+         FCancelScraping:= False;
          populateListViews;
          updateVerifyHashesVisibility;
          updateStats( getFilteredResults );
@@ -1050,15 +1148,22 @@ begin
    var _total:= _romPaths.Count;
 
    if ( _total > 1 ) then begin
+      pbScraping.Style:= pbstMarquee;
       pbScraping.Style:= pbstNormal;
       pbScraping.Max:= _total;
       pbScraping.Position:= 0;
-   end else
+   end else begin
+      pbScraping.Style:= pbstNormal;
       pbScraping.Style:= pbstMarquee;
+   end;
 
    var _mediasDownloaded:= 0;
    var _mediasTotal:= 0;
    var _errors:= TStringList.Create;
+
+   FCancelScraping:= False;
+   btnCancelScrape.Visible:= True;
+   btnCancelScrape.Enabled:= True;
 
    TTask.Run( procedure
    begin
@@ -1067,7 +1172,8 @@ begin
 
       try
          for var _romPath in _romPaths do begin
-            if ( FFormDestroyed ) or ( _quotaExceeded ) then Break;
+            if ( FFormDestroyed ) or ( _quotaExceeded ) or ( FCancelScraping ) then
+               Break;
             Inc( _current );
 
             var _refsForRom:= _grouped[_romPath];
@@ -1232,6 +1338,8 @@ begin
          pbScraping.Visible:= False;
          pbScraping.Style:= pbstMarquee;
          pbScraping.Position:= 0;
+         btnCancelScrape.Visible:= False;
+         FCancelScraping:= False;
          populateListViews;
          updateVerifyHashesVisibility;
          updateStats( getFilteredResults );

@@ -15,7 +15,7 @@ resourcestring
    rstOrphansNb = 'Orphans (%d)';
    rstNoMediaNb = 'No media (%d)';
    rstStopWatchStr = 'Done in %.2f sec';
-   rstSystemStats = 'Games: %d | Scraped with medias: %d | ROMs on disk: %d';
+   rstSystemStats = 'Scraped: %d | Scraped with medias: %d | ROMs on disk: %d';
    rstMissingRoms = 'ROMs referenced in the gamelist but missing on disk';
    rstUnscrapedRoms = 'ROM files present on disk but not referenced in the gamelist';
    rstNoMediaRoms = 'Games present in the gamelist but with no media at all';
@@ -67,6 +67,7 @@ resourcestring
    rstGameNotFound   = 'Game not found : %s';
    rstQuotaExceeded  = 'ScreenScraper quota exceeded — scraping stopped';
    rstUnexpectedError = 'Unexpected error : ';
+   rstDeleteMissingROMs = 'Remove %d game(s) from gamelist?';
 
 const
    {$INCLUDE 'screenscraper_credentials.inc'}

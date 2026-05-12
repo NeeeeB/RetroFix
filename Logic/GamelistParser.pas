@@ -12,6 +12,9 @@ function parseGamelist( const aRomDir: string;
 function addGameToGamelist( const aRomDir: string;
                             const aEntry: TGameEntry ): Boolean;
 
+function removeGameFromGamelist( const aRomDir: string;
+                                 const aRomPath: string ): Boolean;
+
 implementation
 
 uses
@@ -146,29 +149,27 @@ begin
    if ( _root.IsEmpty ) then
       Exit;
 
-   // Remove existing entry if same id or same path
-   if ( not aEntry.id.IsEmpty ) then begin
-      var _existing:= _root.FirstChild;
-      while ( not _existing.IsEmpty ) do begin
-         var _next:= _existing.NextSibling;
-         if ( _existing.NodeType = TXmlNodeType.Element ) and
-            ( _existing.Value = cstXmlGame ) then begin
-            var _idAttr:= _existing.AttributeByName( cstXmlId );
-            if ( not _idAttr.Value.IsEmpty ) and
-               ( _idAttr.Value = aEntry.id ) then begin
-               _root.RemoveChild( _existing );
-               Break;
-            end;
+   var _relPath:= './'+TPath.GetFileName( aEntry.romPath );
+
+   // Check if game already exists — use path, not id
+   var _existing:= _root.FirstChild;
+   while ( not _existing.IsEmpty ) do begin
+      var _next:= _existing.NextSibling;
+      if ( _existing.NodeType = TXmlNodeType.Element ) and
+         ( _existing.Value = cstXmlGame ) then begin
+         var _pathNode:= _existing.ElementByName( cstXmlPath );
+         if ( not _pathNode.IsEmpty ) and
+            ( _pathNode.Text = _relPath ) then begin
+            _root.RemoveChild( _existing );
+            Break;
          end;
-         _existing:= _next;
       end;
+      _existing:= _next;
    end;
 
    var _game:= _root.AddElement( cstXmlGame );
    if ( not aEntry.id.IsEmpty ) then
       _game.AddAttribute( cstXmlId, aEntry.id );
-
-   var _relPath:= './'+TPath.GetFileName( aEntry.romPath );
 
    addElement( _game, cstXmlPath, _relPath );
    addElement( _game, cstXmlName, aEntry.name );
@@ -207,6 +208,43 @@ begin
 
    _doc.Save( _gamelistPath );
    Result:= True;
+end;
+
+function removeGameFromGamelist( const aRomDir: string;
+                                 const aRomPath: string ): Boolean;
+begin
+   Result:= False;
+   var _gamelistPath:= TPath.Combine( aRomDir, cstGamelistFile );
+   if ( not TFile.Exists( _gamelistPath ) ) then
+      Exit;
+
+   var _doc:= TXmlDocument.Create;
+   _doc.Load( _gamelistPath );
+   var _root:= _doc.DocumentElement;
+   if ( _root.IsEmpty ) then
+      Exit;
+
+   // Build relative path to match against gamelist entries
+   var _relPath:= './'+TPath.GetFileName( aRomPath );
+
+   var _node:= _root.FirstChild;
+   while ( not _node.IsEmpty ) do begin
+      var _next:= _node.NextSibling;
+      if ( _node.NodeType = TXmlNodeType.Element ) and
+         ( _node.Value = cstXmlGame ) then begin
+         var _pathNode:= _node.ElementByName( cstXmlPath );
+         if ( not _pathNode.IsEmpty ) and
+            ( _pathNode.Text = _relPath ) then begin
+            _root.RemoveChild( _node );
+            Result:= True;
+            Break;
+         end;
+      end;
+      _node:= _next;
+   end;
+
+   if ( Result ) then
+      _doc.Save( _gamelistPath );
 end;
 
 end.

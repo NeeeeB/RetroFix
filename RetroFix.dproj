@@ -163,6 +163,10 @@
         <DCCReference Include="Shared\HashUtils.pas"/>
         <DCCReference Include="Shared\RomUtils.pas"/>
         <DCCReference Include="Shared\Types.pas"/>
+        <DCCReference Include="Forms\ConfirmDelete.pas">
+            <Form>Form1</Form>
+            <FormType>dfm</FormType>
+        </DCCReference>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>

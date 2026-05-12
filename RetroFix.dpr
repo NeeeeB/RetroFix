@@ -20,7 +20,8 @@ uses
   Constantes in 'Shared\Constantes.pas',
   HashUtils in 'Shared\HashUtils.pas',
   RomUtils in 'Shared\RomUtils.pas',
-  Types in 'Shared\Types.pas';
+  Types in 'Shared\Types.pas',
+  ConfirmDelete in 'Forms\ConfirmDelete.pas' {Form1};
 
 {$R *.res}
 
