@@ -4,7 +4,7 @@ object frmMain: TfrmMain
   BorderIcons = [biSystemMenu, biMinimize]
   BorderStyle = bsSingle
   Caption = 'Retrofix - Fix your game collection'
-  ClientHeight = 313
+  ClientHeight = 386
   ClientWidth = 545
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -21,20 +21,22 @@ object frmMain: TfrmMain
     Left = 0
     Top = 53
     Width = 545
-    Height = 230
+    Height = 303
     Align = alClient
     BevelOuter = bvNone
     TabOrder = 0
+    ExplicitHeight = 230
     object gbxActions: TGroupBox
       AlignWithMargins = True
       Left = 3
       Top = 3
       Width = 539
-      Height = 224
+      Height = 297
       Align = alClient
       Caption = 'Actions'
       Enabled = False
       TabOrder = 0
+      ExplicitHeight = 224
       object gbxBios: TGroupBox
         AlignWithMargins = True
         Left = 5
@@ -152,6 +154,26 @@ object frmMain: TfrmMain
           OnClick = btnGamelistScanDetailsClick
         end
       end
+      object gbxRetrobatLive: TGroupBox
+        AlignWithMargins = True
+        Left = 5
+        Top = 212
+        Width = 529
+        Height = 70
+        Align = alTop
+        Caption = 'Retrobat Live'
+        TabOrder = 2
+        Visible = False
+        object btnBrowse: TButton
+          Left = 10
+          Top = 25
+          Width = 75
+          Height = 25
+          Caption = 'Browse...'
+          TabOrder = 0
+          OnClick = btnBrowseClick
+        end
+      end
     end
   end
   object pnlTop: TPanel
@@ -212,13 +234,14 @@ object frmMain: TfrmMain
   end
   object pnlBottom: TPanel
     Left = 0
-    Top = 283
+    Top = 356
     Width = 545
     Height = 30
     Margins.Top = 0
     Align = alBottom
     BevelOuter = bvNone
     TabOrder = 2
+    ExplicitTop = 283
     object lblProgress: TLabel
       Left = 0
       Top = 8

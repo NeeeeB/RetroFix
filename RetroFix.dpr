@@ -21,7 +21,9 @@ uses
   HashUtils in 'Shared\HashUtils.pas',
   RomUtils in 'Shared\RomUtils.pas',
   Types in 'Shared\Types.pas',
-  ConfirmDelete in 'Forms\ConfirmDelete.pas' {Form1};
+  ConfirmDelete in 'Forms\ConfirmDelete.pas' {Form1},
+  ESApi in 'Network\ESApi.pas',
+  RetrobatBrowser in 'Forms\RetrobatBrowser.pas' {Form2};
 
 {$R *.res}
 
@@ -29,6 +31,6 @@ begin
   Application.Initialize;
   Application.MainFormOnTaskbar := True;
   Application.CreateForm(TfrmMain, frmMain);
-  TStyleManager.TrySetStyle('Charcoal Dark Slate');
+  TStyleManager.TrySetStyle('Windows11 Impressive Dark SE');
   Application.Run;
 end.

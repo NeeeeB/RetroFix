@@ -2,6 +2,9 @@
 
 interface
 
+uses
+   Vcl.ExtCtrls;
+
 type
    TValidFolder = ( vfUndefined,
                     vfValid,
@@ -96,6 +99,13 @@ type
       scrapeImageSrc: string;
       scrapeLogoSrc : string;
       scrapeThumbSrc: string;
+      apiEnabled    : Boolean;
+   end;
+
+   TSystemTile = class( TPanel )
+   public
+      systemName: string;
+      gameId    : string;
    end;
 
    TGameMedia = record

@@ -3,14 +3,16 @@
 interface
 
 uses
-   System.Diagnostics,
-   System.Generics.Collections,
-   Winapi.Windows, System.SysUtils, System.Classes, Vcl.Graphics,
-   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.Menus, Vcl.StdCtrls,
-   Vcl.ExtCtrls,
+   System.Diagnostics, System.Generics.Collections, System.ImageList,
+   System.SysUtils, System.Classes,
+   Vcl.ImgList, Vcl.ComCtrls, Vcl.Graphics, Vcl.Controls,
+   Vcl.Forms, Vcl.Dialogs, Vcl.Menus, Vcl.StdCtrls, Vcl.ExtCtrls,
+   Winapi.Windows,
    Constantes,
-   Types, System.ImageList, Vcl.ImgList, Vcl.ComCtrls,
-   BiosDetails, GameListDetails;
+   Types,
+   BiosDetails,
+   GameListDetails,
+   RetrobatBrowser;
 
 type
    TfrmMain = class( TForm )
@@ -37,6 +39,8 @@ type
       btnScanGamelists: TButton;
       btnGamelistScanDetails: TButton;
       lblGamelistScanResult: TLabel;
+      gbxRetrobatLive: TGroupBox;
+      btnBrowse: TButton;
       procedure FormCreate(Sender: TObject);
       procedure FormDestroy(Sender: TObject);
       procedure btnSelectFolderClick(Sender: TObject);
@@ -53,6 +57,7 @@ type
       procedure FormShow(Sender: TObject);
       procedure btnGamelistScanDetailsClick(Sender: TObject);
       procedure btnSettingsClick(Sender: TObject);
+      procedure btnBrowseClick(Sender: TObject);
 
    private
       FStopWatch: TStopwatch;
@@ -62,6 +67,7 @@ type
       FBiosDetails: TfrmBiosDetails;
       FGamelistResults: TObjectList<TGamelistResult>;
       FGamelistDetails: TfrmGamelistDetails;
+      FRetrobatBrowser: TfrmRetrobatBrowser;
       FSSUserInfo: TSSUserInfo;
       FSSSystemsMapping: TDictionary<string, Integer>;
       function tryAndLoadSettings: Boolean;
@@ -77,6 +83,7 @@ type
       procedure displayGamelistSummary( const aSummary: TGamelistSummary );
       procedure onGamelistProgress( const aSystem: string; aCurrent, aTotal: Integer );
       procedure initSSCredentials;
+      procedure checkESAvailability;
 
    end;
 
@@ -87,6 +94,7 @@ implementation
 
 uses
    System.IOUtils,
+   System.Threading,
    Rest.JSON,
    BiosExtractor,
    BiosParser,
@@ -94,7 +102,8 @@ uses
    GamelistChecker,
    EsSettingsReader,
    Settings,
-   ScreenScraperApi;
+   ScreenScraperApi,
+   ESApi;
 
 {$R *.dfm}
 
@@ -102,6 +111,7 @@ procedure TfrmMain.FormCreate(Sender: TObject);
 begin
    lblValidSelectedFolder.Caption:= cstValidFolderStrings[vfUndefined];
    lblValidSelectedFolder.Font.Color:= cstValidFolderColors[vfUndefined];
+   Height:= cstMainFormHeight;
    FSettings:= TSettings.Create;
    if ( tryAndLoadSettings ) then begin
       FLoading:= True;
@@ -115,6 +125,8 @@ begin
       finally
          FLoading:= False;
       end;
+      readEsSettings( FSettings.retrobatPath, FSettings );
+      checkESAvailability;
    end;
 end;
 
@@ -180,6 +192,26 @@ begin
    end;
 end;
 
+procedure TfrmMain.checkESAvailability;
+begin
+   gbxRetrobatLive.Visible:= False;
+   if ( not FSettings.apiEnabled ) then Exit;
+
+   TTask.Run( procedure
+   begin
+      var _available:= TESApi.isESAvailable( FSettings );
+
+      TThread.Queue( nil, procedure
+      begin
+         gbxRetrobatLive.Visible:= _available;
+         if ( _available ) then
+            Height:= cstMainFormHeight+gbxRetrobatLive.Height+(cstMargin*2)
+         else
+            Height:= cstMainFormHeight;
+      end );
+   end );
+end;
+
 procedure TfrmMain.FormShow(Sender: TObject);
 begin
    btnSelectFolder.SetFocus;
@@ -233,6 +265,8 @@ begin
       var _valid:= retrobatFolderValidation( edtRetrobatPath.Text );
       gbxActions.Enabled:= ( _valid = vfValid );
       setLabelTextAndColor( _valid );
+      readEsSettings( FSettings.retrobatPath, FSettings );
+      checkESAvailability;
    end;
 end;
 
@@ -522,12 +556,22 @@ begin
    lblProgress.Caption:= Format( rstStopWatchStr, [FStopWatch.Elapsed.TotalSeconds] );
 end;
 
+procedure TfrmMain.btnBrowseClick( Sender: TObject );
+begin
+   if ( FRetrobatBrowser = nil ) then begin
+      FRetrobatBrowser:= TfrmRetrobatBrowser.Create( Self );
+      FRetrobatBrowser.init( FSettings );
+   end;
+   FRetrobatBrowser.Show;
+end;
+
 procedure TfrmMain.FormDestroy(Sender: TObject);
 begin
    TFile.WriteAllText( getSettingsFilePath, TJson.ObjectToJsonString( FSettings ) );
    FSettings.Free;
    FGamelistResults.Free;
    FSSSystemsMapping.Free;
+   FRetrobatBrowser.Free;
 end;
 
 end.

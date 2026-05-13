@@ -68,11 +68,15 @@ resourcestring
    rstQuotaExceeded  = 'ScreenScraper quota exceeded — scraping stopped';
    rstUnexpectedError = 'Unexpected error : ';
    rstDeleteMissingROMs = 'Remove %d game(s) from gamelist?';
+   rstApiDisabledOrUnavailable = 'Retrobat is not running or API is not enabled';
+   rstFilenotFound = 'File not found: ';
+   rstUnsupportedMediatype = 'Unsupported media type: ';
 
 const
    {$INCLUDE 'screenscraper_credentials.inc'}
 
    cstMargin = 5;
+   cstMainFormHeight = 350;
 
    cstSettingsFileName       = 'config.json';
    cstRetrobatExeFilename    = 'retrobat.exe';
@@ -209,6 +213,8 @@ const
    cstSSMediaVideoNorm       = 'video-normalized';
    cstSSMediaLogo            = 'logo';
    cstSSSysteme              = 'systeme';
+
+   // ES settings
    cstEsScrapperImageKey = 'ScrapperImageSrc';
    cstEsScrapperLogoKey  = 'ScrapperLogoSrc';
    cstEsScrapperThumbKey = 'ScrapperThumbSrc';
@@ -219,11 +225,30 @@ const
    cstEsScrapeMapKey     = 'ScrapeMap';
    cstEsScrapeVideosKey  = 'ScrapeVideos';
    cstEsScraperRegionKey = 'ScraperRegion';
+   cstEsPublicApiKey     = 'PublicWebAccess';
    cstDefaultRegion      = 'us';
    cstDefaultImageSrc    = cstSSMediaSs;
    cstDefaultLogoSrc     = cstSSMediaLogo;
    cstDefaultThumbSrc    = cstSSMediaBox2D;
    cstThumbFileSuffix    = 'thumb';
+
+   // ES Web API
+   cstESApiDefaultHost  = 'retrobat';
+   cstESApiLocalHost    = '127.0.0.1';
+   cstESApiPort         = '1234';
+   cstESApiCaps         = '/caps';
+   cstESApiReloadGames  = '/reloadgames';
+   cstESApiRunningGame  = '/runningGame';
+   cstESApiIsIdle       = '/isIdle';
+   cstESApiSystems      = '/systems';
+   cstESApiLaunch       = '/launch';
+   cstESApiMessageBox   = '/messagebox';
+   cstESApiNotify       = '/notify';
+   cstESApiQuit         = '/quit';
+   cstESApiRestart      = '/restart';
+   cstESApiEmuKill      = '/emukill';
+   cstESApiAddGames     = '/addgames';
+   cstESApiRemoveGames  = '/removegames';
 
    cstExcludedRomExtensions: TArray<string> = ['.xml', '.ini', '.m3u', '.txt', '.dat', '.cfg', '.log', '.pak'];
 

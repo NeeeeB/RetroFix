@@ -66,7 +66,9 @@ begin
          else if ( _name = cstEsScrapeVideosKey ) then
             aSettings.scrapeVideos:= ( _value = 'true' )
          else if ( _name = cstEsScraperRegionKey ) then
-            aSettings.favRegion:= _value;
+            aSettings.favRegion:= _value
+         else if ( _name = cstEsPublicApiKey ) then
+            aSettings.apiEnabled:= ( _value = 'true' );
       end;
       _node:= _node.NextSibling;
    end;
