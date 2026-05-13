@@ -163,10 +163,9 @@ object frmBiosDetails: TfrmBiosDetails
   end
   object lvBios: TListView
     Left = 0
-    Top = 50
+    Top = 328
     Width = 982
-    Height = 550
-    Align = alClient
+    Height = 272
     BevelInner = bvNone
     BevelOuter = bvNone
     BorderStyle = bsNone
@@ -201,9 +200,73 @@ object frmBiosDetails: TfrmBiosDetails
     ReadOnly = True
     RowSelect = True
     PopupMenu = popupMenu
-    TabOrder = 1
+    TabOrder = 2
     ViewStyle = vsReport
     OnCustomDrawItem = lvBiosCustomDrawItem
+  end
+  object vstBios: TVirtualStringTree
+    Left = 0
+    Top = 50
+    Width = 982
+    Height = 550
+    AccessibleName = 'Actual MD5'
+    Align = alClient
+    BevelInner = bvNone
+    BevelOuter = bvNone
+    BorderStyle = bsNone
+    Colors.TreeLineColor = clNone
+    DefaultNodeHeight = 19
+    Header.AutoSizeIndex = 3
+    Header.Height = 15
+    Header.Options = [hoColumnResize, hoDrag, hoShowSortGlyphs, hoVisible]
+    LineMode = lmBands
+    LineStyle = lsSolid
+    PopupMenu = popupMenu
+    TabOrder = 1
+    TreeOptions.MiscOptions = [toFullRepaintOnResize]
+    TreeOptions.SelectionOptions = [toFullRowSelect]
+    OnFreeNode = vstBiosFreeNode
+    OnGetText = vstBiosGetText
+    OnPaintText = vstBiosPaintText
+    Touch.InteractiveGestures = [igPan, igPressAndTap]
+    Touch.InteractiveGestureOptions = [igoPanSingleFingerHorizontal, igoPanSingleFingerVertical, igoPanInertia, igoPanGutter, igoParentPassthrough]
+    Columns = <
+      item
+        Options = [coAllowClick, coDraggable, coEnabled, coParentBidiMode, coParentColor, coResizable, coShowDropMark, coVisible, coAutoSpring, coAllowFocus, coEditable, coStyleColor]
+        Position = 0
+        Text = 'System'
+        Width = 100
+      end
+      item
+        Options = [coAllowClick, coDraggable, coEnabled, coParentBidiMode, coParentColor, coResizable, coShowDropMark, coVisible, coAutoSpring, coAllowFocus, coEditable, coStyleColor]
+        Position = 1
+        Text = 'File'
+        Width = 100
+      end
+      item
+        Options = [coAllowClick, coDraggable, coEnabled, coParentBidiMode, coParentColor, coResizable, coShowDropMark, coVisible, coAutoSpring, coAllowFocus, coEditable, coStyleColor]
+        Position = 2
+        Text = 'Status'
+        Width = 100
+      end
+      item
+        Options = [coAllowClick, coDraggable, coEnabled, coParentBidiMode, coParentColor, coResizable, coShowDropMark, coVisible, coAutoSpring, coAllowFocus, coEditable, coStyleColor]
+        Position = 3
+        Text = 'Full path'
+        Width = 482
+      end
+      item
+        Options = [coAllowClick, coDraggable, coEnabled, coParentBidiMode, coParentColor, coResizable, coShowDropMark, coVisible, coAutoSpring, coAllowFocus, coEditable, coStyleColor]
+        Position = 4
+        Text = 'Expected MD5'
+        Width = 100
+      end
+      item
+        Options = [coAllowClick, coDraggable, coEnabled, coParentBidiMode, coParentColor, coResizable, coShowDropMark, coVisible, coAutoSpring, coAllowFocus, coEditable, coStyleColor]
+        Position = 5
+        Text = 'Actual MD5'
+        Width = 100
+      end>
   end
   object popupMenu: TPopupMenu
     OnPopup = popupMenuPopup

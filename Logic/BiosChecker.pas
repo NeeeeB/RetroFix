@@ -107,9 +107,13 @@ begin
                   else
                      _res.Status:= bsMD5Mismatch;
                end;
-            end else
-               // One present, one absent
+            end else begin
+               // One present, one absent — partial
                _res.Status:= bsPartial;
+               // Calculate MD5 if primary exists
+               if ( _res.primaryExists ) and ( not _bf.MD5.IsEmpty ) then
+                  _res.ActualMD5:= fileMD5( _fullPath );
+            end;
          end;
 
          _results:= _results+[_res];
