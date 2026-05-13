@@ -91,9 +91,10 @@
         <DCC_Namespace>Winapi;System.Win;Data.Win;Datasnap.Win;Web.Win;Soap.Win;Xml.Win;$(DCC_Namespace)</DCC_Namespace>
         <BT_BuildType>Debug</BT_BuildType>
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
-        <VerInfo_Keys>CompanyName=;FileDescription=$(MSBuildProjectName);FileVersion=1.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProgramID=com.embarcadero.$(MSBuildProjectName);ProductName=$(MSBuildProjectName);ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
         <VerInfo_Locale>1033</VerInfo_Locale>
+        <AppDPIAwarenessMode>none</AppDPIAwarenessMode>
         <Manifest_File>$(BDS)\bin\default_app.manifest</Manifest_File>
+        <Icon_MainIcon>RetroFix.ico</Icon_MainIcon>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_1)'!=''">
         <DCC_Define>DEBUG;$(DCC_Define)</DCC_Define>
@@ -159,7 +160,6 @@
         <DCCReference Include="Logic\GamelistChecker.pas"/>
         <DCCReference Include="Logic\GamelistParser.pas"/>
         <DCCReference Include="Network\ScreenScraperApi.pas"/>
-        <DCCReference Include="Shared\BiosUtils.pas"/>
         <DCCReference Include="Shared\Constantes.pas"/>
         <DCCReference Include="Shared\HashUtils.pas"/>
         <DCCReference Include="Shared\RomUtils.pas"/>

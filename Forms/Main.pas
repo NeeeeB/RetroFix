@@ -378,7 +378,7 @@ begin
             var _json, _err: string;
             if ( not extractBiosJson( FSettings.retrobatPath, _json, _err ) ) then begin
                lblBiosScanResult.Caption:= rstExtractionFailed+_err;
-               lblBiosScanResult.Font.Color:= clRed;
+               lblBiosScanResult.Font.Color:= cstRed;
                Exit;
             end;
             TFile.WriteAllText( _jsonPath, _json, TEncoding.UTF8 );
@@ -389,8 +389,7 @@ begin
          var _entries:= parseBiosJson( _json );
 
          // Step 3 : check bios folder
-         var _biosDir:= TPath.Combine( FSettings.retrobatPath, cstBios );
-         FBiosResults:= checkBios( _biosDir, _entries, chkStrictMode.Checked, onBiosProgress );
+         FBiosResults:= checkBios( FSettings.retrobatPath, _entries, chkStrictMode.Checked, onBiosProgress );
 
          // Step 4 : compute and display summary
          displaySummary( computeSummary( FBiosResults ) );
@@ -481,14 +480,14 @@ begin
                                             aSummary.totalOrphanMedias] );
 
    if ( aSummary.totalMissingROMs > 0 ) then
-      lblGamelistScanResult.Font.Color:= clRed
+      lblGamelistScanResult.Font.Color:= cstRed
    else if ( aSummary.totalUnscraped > 0 ) or
            ( aSummary.totalNoMedia > 0 ) or
            ( aSummary.totalMissingMedias > 0 ) or
            ( aSummary.totalOrphanMedias > 0 ) then
-      lblGamelistScanResult.Font.Color:= $004080FF  // orange
+      lblGamelistScanResult.Font.Color:= cstOrange
    else
-      lblGamelistScanResult.Font.Color:= clGreen;
+      lblGamelistScanResult.Font.Color:= cstGreen;
 end;
 
 procedure TfrmMain.onBiosProgress( const aSystem, aFile: string; aCurrent, aTotal: Integer );
@@ -509,6 +508,7 @@ begin
          bsPresentNoHash : Inc( Result.presentNoHash );
          bsMD5Mismatch   : Inc( Result.md5Mismatch );
          bsMissing       : Inc( Result.missing );
+         bsPartial       : Inc( Result.partial );
       end;
    end;
 end;
@@ -520,15 +520,18 @@ begin
                                         aSummary.ok,
                                         aSummary.presentNoHash,
                                         aSummary.md5Mismatch,
-                                        aSummary.missing] );
+                                        aSummary.missing,
+                                        aSummary.partial] );
 
    // Color logic
    if ( aSummary.missing > 0 ) then
-      lblBiosScanResult.Font.Color:= clRed
+      lblBiosScanResult.Font.Color:= cstRed
    else if ( aSummary.md5Mismatch > 0 ) then
-      lblBiosScanResult.Font.Color:= $004080FF  // orange
+      lblBiosScanResult.Font.Color:= cstYellow
+   else if ( aSummary.partial > 0 ) then
+      lblBiosScanResult.Font.Color:= cstOrange
    else
-      lblBiosScanResult.Font.Color:= clGreen;
+      lblBiosScanResult.Font.Color:= cstGreen;
 end;
 
 procedure TfrmMain.onBiosRescan( Sender: TObject; const aOptions: TScanOptions );

@@ -14,8 +14,7 @@ implementation
 uses
    System.SysUtils,
    System.IOUtils,
-   System.Classes,
-   BiosUtils;
+   System.Classes;
 
 procedure exportBiosToCSV( const aResults: TArray<TBiosResult>;
                            const aFilePath: string );
@@ -32,7 +31,7 @@ begin
                              [_r.SystemKey,
                               _r.SystemName,
                               _r.FileName,
-                              biosStatusToStr( _r.Status ),
+                              cstBiosStatusStrings[_r.Status],
                               _r.ExpectedMD5,
                               _r.ActualMD5,
                               _r.FullPath] ) );

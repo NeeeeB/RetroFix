@@ -101,7 +101,7 @@ begin
       var _entries:= parseBiosJson( _json );
       for var _s in _entries do
          for var _f in _s.files do
-            _biosFiles:= _biosFiles+[LowerCase( _f.fileName )];
+            _biosFiles:= _biosFiles+[LowerCase( ExtractFileName( _f.relativePath ) )];
    end;
 
    var _systemDirs:= TDirectory.GetDirectories( aRomsDir );

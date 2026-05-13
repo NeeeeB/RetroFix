@@ -28,6 +28,7 @@ type
       chkRescanForceExtract: TCheckBox;
       chkRescanStrictMode: TCheckBox;
       btnExportCSV: TButton;
+      chkPartial: TCheckBox;
       procedure FormCreate( Sender: TObject );
       procedure rgpGroupModeClick( Sender: TObject );
       procedure lvBiosCustomDrawItem( Sender: TCustomListView; Item: TListItem;
@@ -45,7 +46,6 @@ type
       FOnRescan: TRescanEvent;
       procedure populateListView;
       function addGroup( const aCaption: string ): TListGroup;
-      function statusToColor( const aStatus: TBiosStatus ): TColor;
       function statusSortOrder( const aStatus: TBiosStatus ): Integer;
       function isStatusVisible( const aStatus: TBiosStatus ): Boolean;
 
@@ -60,11 +60,12 @@ uses
    System.Generics.Defaults,
    System.Generics.Collections,
    System.IOUtils,
+   system.StrUtils,
+   System.Math,
    Vcl.Clipbrd,
    Vcl.Dialogs,
    Winapi.ShellAPI,
-   BiosExport,
-   BiosUtils;
+   BiosExport;
 
 {$R *.dfm}
 
@@ -145,18 +146,6 @@ begin
    Result.State:= [lgsNormal];
 end;
 
-function TfrmBiosDetails.statusToColor( const aStatus: TBiosStatus ): TColor;
-begin
-   case aStatus of
-      bsOK: Result:= clGreen;
-      bsPresentNoHash: Result:= clGray;
-      bsMD5Mismatch: Result:= $004080FF;  // orange
-      bsMissing: Result:= clRed;
-   else
-      Result:= clWindowText;
-   end;
-end;
-
 function TfrmBiosDetails.statusSortOrder( const aStatus: TBiosStatus ): Integer;
 begin
    case aStatus of
@@ -164,8 +153,9 @@ begin
       bsMD5Mismatch: Result:= 1;
       bsPresentNoHash: Result:= 2;
       bsOK: Result:= 3;
+      bsPartial: Result:= 4;
    else
-      Result:= 4;
+      Result:= 5;
    end;
 end;
 
@@ -176,6 +166,7 @@ begin
       bsPresentNoHash: Result:= chkFilterNoHash.Checked;
       bsMD5Mismatch: Result:= chkFilterMismatch.Checked;
       bsMissing: Result:= chkFilterMissing.Checked;
+      bsPartial: Result:= chkPartial.Checked;
    else
       Result:= True;
    end;
@@ -224,18 +215,37 @@ begin
 
             case FGroupMode of
                gmSystem: _groupCaption:= _r.SystemName+' ('+_r.SystemKey+')';
-               gmStatus: _groupCaption:= biosStatusToStr( _r.Status );
+               gmStatus: _groupCaption:= cstBiosStatusStrings[_r.Status];
             end;
 
             _item:= lvBios.Items.Add;
             _item.Caption:= _r.SystemName;
             _item.SubItems.Add( _r.FileName );
-            _item.SubItems.Add( biosStatusToStr( _r.Status ) );
+            _item.SubItems.Add( cstBiosStatusStrings[_r.Status] );
+            _item.SubItems.Add( _r.FullPath );
             _item.SubItems.Add( _r.ExpectedMD5 );
             _item.SubItems.Add( _r.ActualMD5 );
-            _item.SubItems.Add( _r.FullPath );
             _item.GroupID:= getOrCreateGroup( _groupCaption );
             _item.ImageIndex:= Ord( _r.Status );
+
+            // For partial status, add second line for alternative path
+            if ( _r.Status = bsPartial ) and ( not _r.altFullPath.IsEmpty ) then begin
+               // Line 1 status indicator
+               _item.ImageIndex:= IfThen( _r.primaryExists, Ord( bsPartial ), Ord( bsMissing ) );
+
+               // Line 2 : alternative path
+               var _altItem:= lvBios.Items.Add;
+               _altItem.Caption:= '';
+               _altItem.SubItems.Add( ExtractFileName( _r.altFullPath ) );
+               _altItem.SubItems.Add( IfThen( _r.altExists,
+                                              cstBiosStatusStrings[bsOk],
+                                              cstBiosStatusStrings[bsMissing] ) );
+               _altItem.SubItems.Add( _r.altFullPath );
+               _altItem.SubItems.Add( '' );
+               _altItem.SubItems.Add( '' );
+               _altItem.GroupID:= getOrCreateGroup( _groupCaption );
+               _altItem.ImageIndex:= IfThen( _r.altExists, Ord( bsPartial ), Ord( bsMissing ) );
+            end;
          end;
       finally
          lvBios.Items.EndUpdate;
@@ -268,7 +278,7 @@ procedure TfrmBiosDetails.lvBiosCustomDrawItem( Sender: TCustomListView;
                                                 State: TCustomDrawState;
                                                 var DefaultDraw: Boolean );
 begin
-   Sender.Canvas.Font.Color:= statusToColor( TBiosStatus( Item.ImageIndex ) );
+   Sender.Canvas.Font.Color:= cstBiosStatusColors[TBiosStatus( Item.ImageIndex )];
    DefaultDraw:= True;
 end;
 

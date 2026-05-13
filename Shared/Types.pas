@@ -6,6 +6,19 @@ uses
    Vcl.ExtCtrls;
 
 type
+   TBiosStatus = (
+      bsOK,
+      bsMD5Mismatch,
+      bsPresentNoHash,
+      bsMissing,
+      bsPartial );
+
+   TBiosAlternativePath = record
+      systemKey   : string;
+      fileName    : string;
+      altRelPath  : string;
+   end;
+
    TValidFolder = ( vfUndefined,
                     vfValid,
                     vfInvalid );
@@ -163,16 +176,9 @@ type
 
    TRescanEvent = procedure( Sender: TObject; const aOptions: TScanOptions ) of object;
 
-   TBiosStatus = (
-      bsOK,
-      bsMD5Mismatch,
-      bsPresentNoHash,
-      bsMissing );
-
    TBiosFileEntry = record
-      fileName: string;
-      subPath : string;
-      MD5     : string;
+      relativePath: string;
+      MD5         : string;
    end;
 
    TBiosSystemEntry = record
@@ -182,13 +188,16 @@ type
    end;
 
    TBiosResult = record
-      systemKey  : string;
-      systemName : string;
-      fileName   : string;
-      fullPath   : string;
-      status     : TBiosStatus;
-      expectedMD5: string;
-      actualMD5  : string;
+      systemKey    : string;
+      systemName   : string;
+      fileName     : string;
+      fullPath     : string;
+      altFullPath  : string;
+      primaryExists: Boolean;
+      altExists    : Boolean;
+      status       : TBiosStatus;
+      expectedMD5  : string;
+      actualMD5    : string;
    end;
 
    TBiosSummary = record
@@ -197,6 +206,7 @@ type
       presentNoHash: Integer;
       md5Mismatch  : Integer;
       missing      : Integer;
+      partial      : Integer;
    end;
 
    TGamelistSummary = record

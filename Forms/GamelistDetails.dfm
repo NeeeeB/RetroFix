@@ -116,7 +116,7 @@ object frmGamelistDetails: TfrmGamelistDetails
         Width = 892
         Height = 495
         Align = alClient
-        Color = 4210752
+        Color = 5385496
         Columns = <
           item
             Caption = 'System'
@@ -140,6 +140,7 @@ object frmGamelistDetails: TfrmGamelistDetails
         TabOrder = 0
         ViewStyle = vsReport
         OnContextPopup = lvContextPopup
+        OnCustomDrawItem = lvwCustomDrawItem
         OnMouseMove = lvMouseMove
       end
     end
@@ -154,7 +155,7 @@ object frmGamelistDetails: TfrmGamelistDetails
         Width = 892
         Height = 495
         Align = alClient
-        Color = 4210752
+        Color = 5385496
         Columns = <
           item
             Caption = 'System'
@@ -174,6 +175,7 @@ object frmGamelistDetails: TfrmGamelistDetails
         TabOrder = 0
         ViewStyle = vsReport
         OnContextPopup = lvContextPopup
+        OnCustomDrawItem = lvwCustomDrawItem
         OnMouseMove = lvMouseMove
       end
     end
@@ -187,7 +189,7 @@ object frmGamelistDetails: TfrmGamelistDetails
         Width = 892
         Height = 495
         Align = alClient
-        Color = 4210752
+        Color = 5385496
         Columns = <
           item
             Caption = 'System'
@@ -215,6 +217,7 @@ object frmGamelistDetails: TfrmGamelistDetails
         TabOrder = 0
         ViewStyle = vsReport
         OnContextPopup = lvContextPopup
+        OnCustomDrawItem = lvwCustomDrawItem
         OnMouseMove = lvMouseMove
       end
     end
@@ -229,7 +232,7 @@ object frmGamelistDetails: TfrmGamelistDetails
         Width = 892
         Height = 495
         Align = alClient
-        Color = 4210752
+        Color = 5385496
         Columns = <
           item
             Caption = 'System'
@@ -252,6 +255,7 @@ object frmGamelistDetails: TfrmGamelistDetails
         TabOrder = 0
         ViewStyle = vsReport
         OnContextPopup = lvContextPopup
+        OnCustomDrawItem = lvwCustomDrawItem
         OnMouseMove = lvMouseMove
       end
     end
@@ -265,7 +269,7 @@ object frmGamelistDetails: TfrmGamelistDetails
         Width = 892
         Height = 495
         Align = alClient
-        Color = 4210752
+        Color = 5385496
         Columns = <
           item
             Caption = 'System'
@@ -285,6 +289,7 @@ object frmGamelistDetails: TfrmGamelistDetails
         TabOrder = 0
         ViewStyle = vsReport
         OnContextPopup = lvContextPopup
+        OnCustomDrawItem = lvwCustomDrawItem
         OnMouseMove = lvMouseMove
       end
     end
