@@ -41,7 +41,7 @@ object frmBiosDetails: TfrmBiosDetails
       AlignWithMargins = True
       Left = 159
       Top = 3
-      Width = 452
+      Width = 514
       Height = 44
       Align = alLeft
       Caption = 'Filters'
@@ -49,7 +49,7 @@ object frmBiosDetails: TfrmBiosDetails
       object chkFilterOK: TCheckBox
         Left = 14
         Top = 19
-        Width = 59
+        Width = 54
         Height = 17
         Caption = #9989' OK'
         Checked = True
@@ -58,9 +58,9 @@ object frmBiosDetails: TfrmBiosDetails
         OnClick = chkFilterClick
       end
       object chkFilterNoHash: TCheckBox
-        Left = 79
+        Left = 74
         Top = 19
-        Width = 138
+        Width = 132
         Height = 17
         Caption = #10134' Present (no hash)'
         Checked = True
@@ -69,9 +69,9 @@ object frmBiosDetails: TfrmBiosDetails
         OnClick = chkFilterClick
       end
       object chkFilterMismatch: TCheckBox
-        Left = 223
+        Left = 212
         Top = 19
-        Width = 130
+        Width = 122
         Height = 17
         Caption = #9888#65039' MD5 mismatch'
         Checked = True
@@ -80,9 +80,9 @@ object frmBiosDetails: TfrmBiosDetails
         OnClick = chkFilterClick
       end
       object chkFilterMissing: TCheckBox
-        Left = 359
+        Left = 340
         Top = 19
-        Width = 90
+        Width = 82
         Height = 17
         Caption = #10060' Missing'
         Checked = True
@@ -90,18 +90,29 @@ object frmBiosDetails: TfrmBiosDetails
         TabOrder = 3
         OnClick = chkFilterClick
       end
+      object chkPartial: TCheckBox
+        Left = 428
+        Top = 19
+        Width = 82
+        Height = 17
+        Caption = #9888#65039' Partial'
+        Checked = True
+        State = cbChecked
+        TabOrder = 4
+        OnClick = chkFilterClick
+      end
     end
     object gbxActions: TGroupBox
       AlignWithMargins = True
-      Left = 617
+      Left = 679
       Top = 3
-      Width = 362
+      Width = 300
       Height = 44
       Align = alClient
       Caption = 'Actions'
       TabOrder = 2
       DesignSize = (
-        362
+        300
         44)
       object btnRescan: TButton
         Left = 8
@@ -139,7 +150,7 @@ object frmBiosDetails: TfrmBiosDetails
         TabOrder = 2
       end
       object btnExportCSV: TButton
-        Left = 264
+        Left = 203
         Top = 15
         Width = 89
         Height = 25
@@ -159,7 +170,7 @@ object frmBiosDetails: TfrmBiosDetails
     BevelInner = bvNone
     BevelOuter = bvNone
     BorderStyle = bsNone
-    Color = 4210752
+    Color = 5385496
     Columns = <
       item
         Caption = 'System'
@@ -174,16 +185,16 @@ object frmBiosDetails: TfrmBiosDetails
         Width = 130
       end
       item
+        Caption = 'Full path'
+        Width = 180
+      end
+      item
         Caption = 'Expected MD5'
         Width = 150
       end
       item
         Caption = 'Actual MD5'
         Width = 150
-      end
-      item
-        Caption = 'Full path'
-        Width = 180
       end>
     FlatScrollBars = True
     GroupView = True

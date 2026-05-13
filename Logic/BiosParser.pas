@@ -11,6 +11,7 @@ implementation
 
 uses
    System.Generics.Collections,
+   System.IOUtils,
    System.SysUtils,
    System.JSON,
    Constantes;
@@ -40,29 +41,8 @@ begin
          for var ii:= 0 to Pred( _filesArr.Count ) do begin
             var _fileObj:= _filesArr.Items[ii] as TJSONObject;
 
-            // Splitter "bios/kronos/kronos.bin" → retirer le préfixe "bios/"
-            // puis séparer sous-dossier et nom de fichier
-            var _filePath:= _fileObj.GetValue<string>( cstFile, '' );
-
-            // Retirer le préfixe "bios/"
-            if _filePath.StartsWith( cstBios+'/' ) then
-               _filePath:= _filePath.Substring( Succ( Length( cstBios ) ) );  // longueur de 'bios/'
-
-            // Séparer en parts sur '/'
-            var _parts:= _filePath.Split( ['/'] );
-
             var _biosFile: TBiosFileEntry;
-            if ( Length( _parts ) = 1 ) then begin
-               // Racine du dossier bios : "scph5501.bin"
-               _biosFile.subPath:= '';
-               _biosFile.fileName:= _parts[0];
-            end else begin
-               // Sous-dossier(s) : "kronos/kronos.bin" ou "mame/hash/adam_cart.xml"
-               _biosFile.fileName:= _parts[High( _parts )];
-               _biosFile.subPath := String.Join( '\',
-                                                 Copy( _parts, 0, Length( _parts ) - 1 ) );
-            end;
-
+            _biosFile.relativePath:= _fileObj.GetValue<string>( cstFile, '' ).Replace( '/', '\' );
             _biosFile.MD5:= LowerCase( _fileObj.GetValue<string>( cstMD5, '' ) );
 
             _entry.files:= _entry.files+[_biosFile];

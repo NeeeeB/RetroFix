@@ -16,7 +16,6 @@ uses
   GamelistChecker in 'Logic\GamelistChecker.pas',
   GamelistParser in 'Logic\GamelistParser.pas',
   ScreenScraperApi in 'Network\ScreenScraperApi.pas',
-  BiosUtils in 'Shared\BiosUtils.pas',
   Constantes in 'Shared\Constantes.pas',
   HashUtils in 'Shared\HashUtils.pas',
   RomUtils in 'Shared\RomUtils.pas',
@@ -29,6 +28,6 @@ begin
   Application.Initialize;
   Application.MainFormOnTaskbar := True;
   Application.CreateForm(TfrmMain, frmMain);
-  TStyleManager.TrySetStyle('Charcoal Dark Slate');
+  TStyleManager.TrySetStyle('Windows11 Impressive Dark SE');
   Application.Run;
 end.

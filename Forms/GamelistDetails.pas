@@ -57,6 +57,11 @@ type
       procedure mniScrapeMediasClick(Sender: TObject);
       procedure btnCancelScrapeClick(Sender: TObject);
       procedure mniDeleteMissingROMClick(Sender: TObject);
+      procedure lvwCustomDrawItem( Sender: TCustomListView;
+                                   Item: TListItem;
+                                   State: TCustomDrawState;
+                                   var DefaultDraw: Boolean );
+
 
    private
       FResults: TObjectList<TGamelistResult>;
@@ -201,6 +206,15 @@ procedure TfrmGamelistDetails.lvMouseMove( Sender: TObject;
                                            X, Y: Integer );
 begin
    pgcMain.Hint:= '';
+end;
+
+procedure TfrmGamelistDetails.lvwCustomDrawItem( Sender: TCustomListView;
+                                                 Item: TListItem;
+                                                 State: TCustomDrawState;
+                                                 var DefaultDraw: Boolean );
+begin
+   Sender.Canvas.Font.Color:= clWhite;
+   DefaultDraw:= True;
 end;
 
 procedure TfrmGamelistDetails.lvContextPopup( Sender: TObject;

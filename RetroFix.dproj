@@ -71,7 +71,7 @@
         <UWP_DelphiLogo44>$(BDS)\bin\Artwork\Windows\UWP\delphi_UwpDefault_44.png</UWP_DelphiLogo44>
         <UWP_DelphiLogo150>$(BDS)\bin\Artwork\Windows\UWP\delphi_UwpDefault_150.png</UWP_DelphiLogo150>
         <SanitizedProjectName>RetroFix</SanitizedProjectName>
-        <Custom_Styles>&quot;Charcoal Dark Slate|VCLSTYLE|$(BDSCOMMONDIR)\Styles\CharcoalDarkSlate.vsf&quot;</Custom_Styles>
+        <Custom_Styles>&quot;Windows11 Impressive Dark SE|VCLSTYLE|$(BDSCOMMONDIR)\Styles\Windows11_Impressive_Dark_SE.vsf&quot;</Custom_Styles>
         <DCC_UnitSearchPath>.\Neslib;.\Forms;.\Logic;.\Network;.\Shared;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
         <VerInfo_Locale>1036</VerInfo_Locale>
         <VerInfo_Keys>CompanyName=;FileDescription=$(MSBuildProjectName);FileVersion=1.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProgramID=com.embarcadero.$(MSBuildProjectName);ProductName=$(MSBuildProjectName);ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
@@ -90,9 +90,10 @@
         <DCC_Namespace>Winapi;System.Win;Data.Win;Datasnap.Win;Web.Win;Soap.Win;Xml.Win;$(DCC_Namespace)</DCC_Namespace>
         <BT_BuildType>Debug</BT_BuildType>
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
-        <VerInfo_Keys>CompanyName=;FileDescription=$(MSBuildProjectName);FileVersion=1.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProgramID=com.embarcadero.$(MSBuildProjectName);ProductName=$(MSBuildProjectName);ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
         <VerInfo_Locale>1033</VerInfo_Locale>
+        <AppDPIAwarenessMode>none</AppDPIAwarenessMode>
         <Manifest_File>$(BDS)\bin\default_app.manifest</Manifest_File>
+        <Icon_MainIcon>RetroFix.ico</Icon_MainIcon>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_1)'!=''">
         <DCC_Define>DEBUG;$(DCC_Define)</DCC_Define>
@@ -158,7 +159,6 @@
         <DCCReference Include="Logic\GamelistChecker.pas"/>
         <DCCReference Include="Logic\GamelistParser.pas"/>
         <DCCReference Include="Network\ScreenScraperApi.pas"/>
-        <DCCReference Include="Shared\BiosUtils.pas"/>
         <DCCReference Include="Shared\Constantes.pas"/>
         <DCCReference Include="Shared\HashUtils.pas"/>
         <DCCReference Include="Shared\RomUtils.pas"/>
@@ -204,6 +204,70 @@
                 </Excluded_Packages>
             </Delphi.Personality>
             <Deployment Version="5">
+                <DeployFile Condition="'$(SKIADIR)'==''" Required="true" LocalName="$(BDS)\bin64\sk4d.dll" Configuration="Debug" Class="Skia">
+                    <Platform Name="Win64">
+                        <RemoteDir>.\</RemoteDir>
+                        <Operation>0</Operation>
+                        <RemoteName>sk4d.dll</RemoteName>
+                        <Overwrite>true</Overwrite>
+                    </Platform>
+                </DeployFile>
+                <DeployFile Condition="'$(SKIADIR)'==''" Required="true" LocalName="$(BDS)\bin64\sk4d.dll" Configuration="Release" Class="Skia">
+                    <Platform Name="Win64">
+                        <RemoteDir>.\</RemoteDir>
+                        <Operation>0</Operation>
+                        <RemoteName>sk4d.dll</RemoteName>
+                        <Overwrite>true</Overwrite>
+                    </Platform>
+                </DeployFile>
+                <DeployFile Condition="'$(SKIADIR)'==''" Required="true" LocalName="$(BDS)\bin\sk4d.dll" Configuration="Debug" Class="Skia">
+                    <Platform Name="Win32">
+                        <RemoteDir>.\</RemoteDir>
+                        <Operation>0</Operation>
+                        <RemoteName>sk4d.dll</RemoteName>
+                        <Overwrite>true</Overwrite>
+                    </Platform>
+                </DeployFile>
+                <DeployFile Condition="'$(SKIADIR)'==''" Required="true" LocalName="$(BDS)\bin\sk4d.dll" Configuration="Release" Class="Skia">
+                    <Platform Name="Win32">
+                        <RemoteDir>.\</RemoteDir>
+                        <Operation>0</Operation>
+                        <RemoteName>sk4d.dll</RemoteName>
+                        <Overwrite>true</Overwrite>
+                    </Platform>
+                </DeployFile>
+                <DeployFile Condition="'$(SKIADIR)'!=''" Required="true" LocalName="$(SKIADIR)\Binary\Shared\Win32\sk4d.dll" Configuration="Debug" Class="Skia">
+                    <Platform Name="Win32">
+                        <RemoteDir>.\</RemoteDir>
+                        <Operation>0</Operation>
+                        <RemoteName>sk4d.dll</RemoteName>
+                        <Overwrite>true</Overwrite>
+                    </Platform>
+                </DeployFile>
+                <DeployFile Condition="'$(SKIADIR)'!=''" Required="true" LocalName="$(SKIADIR)\Binary\Shared\Win32\sk4d.dll" Configuration="Release" Class="Skia">
+                    <Platform Name="Win32">
+                        <RemoteDir>.\</RemoteDir>
+                        <Operation>0</Operation>
+                        <RemoteName>sk4d.dll</RemoteName>
+                        <Overwrite>true</Overwrite>
+                    </Platform>
+                </DeployFile>
+                <DeployFile Condition="'$(SKIADIR)'!=''" Required="true" LocalName="$(SKIADIR)\Binary\Shared\Win64\sk4d.dll" Configuration="Debug" Class="Skia">
+                    <Platform Name="Win64">
+                        <RemoteDir>.\</RemoteDir>
+                        <Operation>0</Operation>
+                        <RemoteName>sk4d.dll</RemoteName>
+                        <Overwrite>true</Overwrite>
+                    </Platform>
+                </DeployFile>
+                <DeployFile Condition="'$(SKIADIR)'!=''" Required="true" LocalName="$(SKIADIR)\Binary\Shared\Win64\sk4d.dll" Configuration="Release" Class="Skia">
+                    <Platform Name="Win64">
+                        <RemoteDir>.\</RemoteDir>
+                        <Operation>0</Operation>
+                        <RemoteName>sk4d.dll</RemoteName>
+                        <Overwrite>true</Overwrite>
+                    </Platform>
+                </DeployFile>
                 <DeployFile LocalName="Win32\Debug\RetroFix.exe" Configuration="Debug" Class="ProjectOutput">
                     <Platform Name="Win32">
                         <RemoteName>RetroFix.exe</RemoteName>

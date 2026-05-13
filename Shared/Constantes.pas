@@ -7,7 +7,7 @@ uses
    Types;
 
 resourcestring
-   rstBiosScanSummary = 'Total: %d | OK: %d | Present (no hash): %d | MD5 mismatch: %d | Missing: %d';
+   rstBiosScanSummary = 'Total: %d | OK: %d | Present: %d | MD5 mismatch: %d | Missing: %d | Partial: %d';
    rstGamelistScanSummary = 'Systems: %d | Games: %d | Scraped: %d | No media: %d | Missing ROMs: %d | Unscraped: %d | Missing medias: %d | Orphans: %d';
    rstMissingRomsNb = 'Missing ROMs (%d)';
    rstUnscrapedNb = 'Unscraped (%d)';
@@ -38,8 +38,9 @@ resourcestring
    rstMix = 'Mix';
    rstBiosOK = '✅ OK';
    rstBiosPresentNoHash = '➖ Present (no hash)';
-   rstBiosMD5Mismatch = '⚠️ MD5 mismatch';
+   rstBiosMD5Mismatch = '⚠ MD5 mismatch';
    rstBiosMissing = '❌ Missing';
+   rstBiosPartial = '⚠️Partial (missing a file)';
    rstScanning = 'Scanning...';
    rstExtractionFailed = 'Extraction failed : ';
    rstComputing    = 'Computing...';
@@ -225,12 +226,38 @@ const
    cstDefaultThumbSrc    = cstSSMediaBox2D;
    cstThumbFileSuffix    = 'thumb';
 
+   cstGreen = $7FFF00;
+   cstYellow = $00D7FF;
+   cstOrange = $4763FF;
+   cstRed = $3C14DC;
+
    cstExcludedRomExtensions: TArray<string> = ['.xml', '.ini', '.m3u', '.txt', '.dat', '.cfg', '.log', '.pak'];
+
+   cstBiosAlternativePaths: array[0..2] of TBiosAlternativePath =
+      ( ( systemKey: 'neogeo'; fileName: 'neogeo.zip'; altRelPath: 'roms\neogeo\neogeo.zip' ),
+        ( systemKey: 'naomi'; fileName: 'naomi.zip'; altRelPath: 'emulators\flycast\data\naomi.zip' ),
+        ( systemKey: 'naomi2'; fileName: 'naomi2.zip'; altRelPath: 'emulators\flycast\data\naomi2.zip' ) );
+
+   cstBiosStatusColors: array[TBiosStatus] of TColor = (
+      cstGreen,
+      cstYellow,
+      clWhite,
+      cstRed,
+      cstOrange
+   );
+
+   cstBiosStatusStrings: array[TBiosStatus] of string = (
+      rstBiosOK,
+      rstBiosMD5Mismatch,
+      rstBiosPresentNoHash,
+      rstBiosMissing,
+      rstBiosPartial
+   );
 
    cstValidFolderColors: array[tValidFolder] of TColor =
       ( clGray,
-        clGreen,
-        clRed );
+        cstGreen,
+        cstRed );
 
    cstValidFolderStrings: array[TValidFolder] of string =
       ( rstNoFolderSelected,
