@@ -231,6 +231,29 @@ type
       region: string;
    end;
 
+   PBiosNodeData = ^TBiosNodeData;
+   TBiosNodeData = record
+      result   : TBiosResult;
+      isAltPath: Boolean;
+      isGroup  : Boolean;
+      groupText: string;
+   end;
+
+   PGamelistNodeData = ^TGamelistNodeData;
+   TGamelistNodeData = record
+      isGroup  : Boolean;
+      groupText: string;
+      ref      : TGameEntryRef;
+   end;
+
+   PHashMismatchNodeData = ^THashMismatchNodeData;
+   THashMismatchNodeData = record
+      ref         : TGameEntryRef;
+      expectedHash: string;
+      actualHash  : string;
+      hashType    : string;
+   end;
+
 implementation
 
 end.

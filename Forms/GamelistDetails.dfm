@@ -13,6 +13,7 @@ object frmGamelistDetails: TfrmGamelistDetails
   Font.Name = 'Segoe UI'
   Font.Style = []
   Position = poOwnerFormCenter
+  WindowState = wsMaximized
   OnClose = FormClose
   OnCreate = FormCreate
   OnDestroy = FormDestroy
@@ -110,38 +111,50 @@ object frmGamelistDetails: TfrmGamelistDetails
       Caption = 'Missing ROMs'
       ParentShowHint = False
       ShowHint = False
-      object lvwMissingRoms: TListView
+      object vstMissingRoms: TVirtualStringTree
         Left = 0
         Top = 0
         Width = 892
         Height = 495
+        AccessibleName = 'Actual MD5'
         Align = alClient
-        Color = 5385496
+        BevelInner = bvNone
+        BevelOuter = bvNone
+        BorderStyle = bsNone
+        Colors.TreeLineColor = clNone
+        DefaultNodeHeight = 19
+        Header.AutoSizeIndex = -1
+        Header.Options = [hoColumnResize, hoDrag, hoShowSortGlyphs, hoVisible]
+        LineMode = lmBands
+        LineStyle = lsSolid
+        PopupMenu = popActions
+        TabOrder = 0
+        TreeOptions.MiscOptions = [toFullRepaintOnResize]
+        TreeOptions.SelectionOptions = [toFullRowSelect, toMultiSelect, toRightClickSelect]
+        OnFreeNode = vstMissingRomsFreeNode
+        OnGetText = vstMissingRomsGetText
+        OnPaintText = vstMissingRomsPaintText
+        Touch.InteractiveGestures = [igPan, igPressAndTap]
+        Touch.InteractiveGestureOptions = [igoPanSingleFingerHorizontal, igoPanSingleFingerVertical, igoPanInertia, igoPanGutter, igoParentPassthrough]
         Columns = <
           item
-            Caption = 'System'
-            Width = 120
+            Options = [coAllowClick, coEnabled, coParentBidiMode, coParentColor, coResizable, coShowDropMark, coVisible, coAllowFocus, coStyleColor]
+            Position = 0
+            Text = 'System'
+            Width = 300
           end
           item
-            Caption = 'Game'
-            Width = 200
+            Options = [coAllowClick, coEnabled, coParentBidiMode, coParentColor, coResizable, coShowDropMark, coVisible, coAllowFocus, coStyleColor]
+            Position = 1
+            Text = 'Game'
+            Width = 300
           end
           item
-            Caption = 'Expected path'
+            Options = [coAllowClick, coEnabled, coParentBidiMode, coParentColor, coResizable, coShowDropMark, coVisible, coAutoSpring, coAllowFocus, coStyleColor]
+            Position = 2
+            Text = 'Expected path'
             Width = 400
           end>
-        MultiSelect = True
-        GroupView = True
-        ReadOnly = True
-        RowSelect = True
-        ParentShowHint = False
-        PopupMenu = popActions
-        ShowHint = False
-        TabOrder = 0
-        ViewStyle = vsReport
-        OnContextPopup = lvContextPopup
-        OnCustomDrawItem = lvwCustomDrawItem
-        OnMouseMove = lvMouseMove
       end
     end
     object tbsUnscraped: TTabSheet
@@ -149,76 +162,100 @@ object frmGamelistDetails: TfrmGamelistDetails
       Caption = 'Unscraped'
       ParentShowHint = False
       ShowHint = False
-      object lvwUnscraped: TListView
+      object vstUnscraped: TVirtualStringTree
         Left = 0
         Top = 0
         Width = 892
         Height = 495
+        AccessibleName = 'Actual MD5'
         Align = alClient
-        Color = 5385496
+        BevelInner = bvNone
+        BevelOuter = bvNone
+        BorderStyle = bsNone
+        Colors.TreeLineColor = clNone
+        DefaultNodeHeight = 19
+        Header.AutoSizeIndex = -1
+        Header.Options = [hoColumnResize, hoDrag, hoShowSortGlyphs, hoVisible]
+        LineMode = lmBands
+        LineStyle = lsSolid
+        PopupMenu = popActions
+        TabOrder = 0
+        TreeOptions.MiscOptions = [toFullRepaintOnResize]
+        TreeOptions.SelectionOptions = [toFullRowSelect, toMultiSelect, toRightClickSelect]
+        OnFreeNode = vstUnscrapedFreeNode
+        OnGetText = vstUnscrapedGetText
+        OnPaintText = vstUnscrapedPaintText
+        Touch.InteractiveGestures = [igPan, igPressAndTap]
+        Touch.InteractiveGestureOptions = [igoPanSingleFingerHorizontal, igoPanSingleFingerVertical, igoPanInertia, igoPanGutter, igoParentPassthrough]
         Columns = <
           item
-            Caption = 'System'
-            Width = 120
+            Options = [coAllowClick, coEnabled, coParentBidiMode, coParentColor, coResizable, coShowDropMark, coVisible, coAllowFocus, coStyleColor]
+            Position = 0
+            Text = 'System'
+            Width = 300
           end
           item
-            Caption = 'ROM file'
-            Width = 500
+            Options = [coAllowClick, coEnabled, coParentBidiMode, coParentColor, coResizable, coShowDropMark, coVisible, coAllowFocus, coStyleColor]
+            Position = 1
+            Text = 'ROM File'
+            Width = 400
           end>
-        MultiSelect = True
-        GroupView = True
-        ReadOnly = True
-        RowSelect = True
-        ParentShowHint = False
-        PopupMenu = popActions
-        ShowHint = False
-        TabOrder = 0
-        ViewStyle = vsReport
-        OnContextPopup = lvContextPopup
-        OnCustomDrawItem = lvwCustomDrawItem
-        OnMouseMove = lvMouseMove
       end
     end
     object tbsMissingMedias: TTabSheet
       Caption = 'Missing medias'
       ParentShowHint = False
       ShowHint = False
-      object lvwMissingMedias: TListView
+      object vstMissingMedias: TVirtualStringTree
         Left = 0
         Top = 0
         Width = 892
         Height = 495
+        AccessibleName = 'Actual MD5'
         Align = alClient
-        Color = 5385496
+        BevelInner = bvNone
+        BevelOuter = bvNone
+        BorderStyle = bsNone
+        Colors.TreeLineColor = clNone
+        DefaultNodeHeight = 19
+        Header.AutoSizeIndex = -1
+        Header.Options = [hoColumnResize, hoDrag, hoShowSortGlyphs, hoVisible]
+        LineMode = lmBands
+        LineStyle = lsSolid
+        PopupMenu = popActions
+        TabOrder = 0
+        TreeOptions.MiscOptions = [toFullRepaintOnResize]
+        TreeOptions.SelectionOptions = [toFullRowSelect, toMultiSelect, toRightClickSelect]
+        OnFreeNode = vstMissingMediasFreeNode
+        OnGetText = vstMissingMediasGetText
+        OnPaintText = vstMissingMediasPaintText
+        Touch.InteractiveGestures = [igPan, igPressAndTap]
+        Touch.InteractiveGestureOptions = [igoPanSingleFingerHorizontal, igoPanSingleFingerVertical, igoPanInertia, igoPanGutter, igoParentPassthrough]
         Columns = <
           item
-            Caption = 'System'
-            Width = 120
+            Options = [coAllowClick, coEnabled, coParentBidiMode, coParentColor, coResizable, coShowDropMark, coVisible, coAllowFocus, coStyleColor]
+            Position = 0
+            Text = 'System'
+            Width = 300
           end
           item
-            Caption = 'Game'
-            Width = 200
+            Options = [coAllowClick, coEnabled, coParentBidiMode, coParentColor, coResizable, coShowDropMark, coVisible, coAllowFocus, coStyleColor]
+            Position = 1
+            Text = 'Game'
+            Width = 300
           end
           item
-            Caption = 'Media type'
+            Options = [coAllowClick, coEnabled, coParentBidiMode, coParentColor, coResizable, coShowDropMark, coVisible, coAllowFocus, coStyleColor]
+            Position = 2
+            Text = 'Media type'
             Width = 100
           end
           item
-            Caption = 'Expected path'
+            Options = [coAllowClick, coEnabled, coParentBidiMode, coParentColor, coResizable, coShowDropMark, coVisible, coAllowFocus, coStyleColor]
+            Position = 3
+            Text = 'Expected path'
             Width = 400
           end>
-        MultiSelect = True
-        GroupView = True
-        ReadOnly = True
-        RowSelect = True
-        ParentShowHint = False
-        PopupMenu = popActions
-        ShowHint = False
-        TabOrder = 0
-        ViewStyle = vsReport
-        OnContextPopup = lvContextPopup
-        OnCustomDrawItem = lvwCustomDrawItem
-        OnMouseMove = lvMouseMove
       end
     end
     object tbsNoMedia: TTabSheet
@@ -226,114 +263,162 @@ object frmGamelistDetails: TfrmGamelistDetails
       ImageIndex = 4
       ParentShowHint = False
       ShowHint = False
-      object lvwNoMedia: TListView
+      object vstNoMedia: TVirtualStringTree
         Left = 0
         Top = 0
         Width = 892
         Height = 495
+        AccessibleName = 'Actual MD5'
         Align = alClient
-        Color = 5385496
+        BevelInner = bvNone
+        BevelOuter = bvNone
+        BorderStyle = bsNone
+        Colors.TreeLineColor = clNone
+        DefaultNodeHeight = 19
+        Header.AutoSizeIndex = -1
+        Header.Options = [hoColumnResize, hoDrag, hoShowSortGlyphs, hoVisible]
+        LineMode = lmBands
+        LineStyle = lsSolid
+        PopupMenu = popActions
+        TabOrder = 0
+        TreeOptions.MiscOptions = [toFullRepaintOnResize]
+        TreeOptions.SelectionOptions = [toFullRowSelect, toMultiSelect, toRightClickSelect]
+        OnFreeNode = vstNoMediaFreeNode
+        OnGetText = vstNoMediaGetText
+        OnPaintText = vstNoMediaPaintText
+        Touch.InteractiveGestures = [igPan, igPressAndTap]
+        Touch.InteractiveGestureOptions = [igoPanSingleFingerHorizontal, igoPanSingleFingerVertical, igoPanInertia, igoPanGutter, igoParentPassthrough]
         Columns = <
           item
-            Caption = 'System'
-            Width = 120
+            Options = [coAllowClick, coEnabled, coParentBidiMode, coParentColor, coResizable, coShowDropMark, coVisible, coAllowFocus, coStyleColor]
+            Position = 0
+            Text = 'System'
+            Width = 300
           end
           item
-            Caption = 'Game'
-            Width = 600
+            Options = [coAllowClick, coEnabled, coParentBidiMode, coParentColor, coResizable, coShowDropMark, coVisible, coAllowFocus, coStyleColor]
+            Position = 1
+            Text = 'Game'
+            Width = 400
           end
           item
-            Caption = 'ROM Path'
+            Options = [coAllowClick, coEnabled, coParentBidiMode, coParentColor, coResizable, coShowDropMark, coVisible, coAllowFocus, coStyleColor]
+            Position = 2
+            Text = 'ROM Path'
+            Width = 400
           end>
-        MultiSelect = True
-        GroupView = True
-        ReadOnly = True
-        RowSelect = True
-        ParentShowHint = False
-        PopupMenu = popActions
-        ShowHint = False
-        TabOrder = 0
-        ViewStyle = vsReport
-        OnContextPopup = lvContextPopup
-        OnCustomDrawItem = lvwCustomDrawItem
-        OnMouseMove = lvMouseMove
       end
     end
     object tbsOrphans: TTabSheet
       Caption = 'Orphans'
       ParentShowHint = False
       ShowHint = False
-      object lvwOrphans: TListView
+      object vstOrphans: TVirtualStringTree
         Left = 0
         Top = 0
         Width = 892
         Height = 495
+        AccessibleName = 'Actual MD5'
         Align = alClient
-        Color = 5385496
+        BevelInner = bvNone
+        BevelOuter = bvNone
+        BorderStyle = bsNone
+        Colors.TreeLineColor = clNone
+        DefaultNodeHeight = 19
+        Header.AutoSizeIndex = -1
+        Header.Options = [hoColumnResize, hoDrag, hoShowSortGlyphs, hoVisible]
+        LineMode = lmBands
+        LineStyle = lsSolid
+        PopupMenu = popActions
+        TabOrder = 0
+        TreeOptions.MiscOptions = [toFullRepaintOnResize]
+        TreeOptions.SelectionOptions = [toFullRowSelect, toMultiSelect, toRightClickSelect]
+        OnFreeNode = vstOrphansFreeNode
+        OnGetText = vstOrphansGetText
+        OnPaintText = vstOrphansPaintText
+        Touch.InteractiveGestures = [igPan, igPressAndTap]
+        Touch.InteractiveGestureOptions = [igoPanSingleFingerHorizontal, igoPanSingleFingerVertical, igoPanInertia, igoPanGutter, igoParentPassthrough]
         Columns = <
           item
-            Caption = 'System'
-            Width = 120
+            Options = [coAllowClick, coEnabled, coParentBidiMode, coParentColor, coResizable, coShowDropMark, coVisible, coAllowFocus, coStyleColor]
+            Position = 0
+            Text = 'System'
+            Width = 300
           end
           item
-            Caption = 'File path'
-            Width = 600
+            Options = [coAllowClick, coEnabled, coParentBidiMode, coParentColor, coResizable, coShowDropMark, coVisible, coAllowFocus, coStyleColor]
+            Position = 1
+            Text = 'File path'
+            Width = 400
           end>
-        MultiSelect = True
-        GroupView = True
-        ReadOnly = True
-        RowSelect = True
-        ParentShowHint = False
-        PopupMenu = popActions
-        ShowHint = False
-        TabOrder = 0
-        ViewStyle = vsReport
-        OnContextPopup = lvContextPopup
-        OnCustomDrawItem = lvwCustomDrawItem
-        OnMouseMove = lvMouseMove
       end
     end
     object tbsHashMismatch: TTabSheet
       Caption = 'Hash mismatches'
       ImageIndex = 5
       TabVisible = False
-      object lvwHashMismatch: TListView
+      object vstHashMismatch: TVirtualStringTree
         Left = 0
         Top = 0
         Width = 892
         Height = 495
+        AccessibleName = 'Actual MD5'
         Align = alClient
-        Color = 4210752
+        BevelInner = bvNone
+        BevelOuter = bvNone
+        BorderStyle = bsNone
+        Colors.TreeLineColor = clNone
+        DefaultNodeHeight = 19
+        Header.AutoSizeIndex = -1
+        Header.Options = [hoColumnResize, hoDrag, hoShowSortGlyphs, hoVisible]
+        LineMode = lmBands
+        LineStyle = lsSolid
+        PopupMenu = popActions
+        TabOrder = 0
+        TreeOptions.MiscOptions = [toFullRepaintOnResize]
+        TreeOptions.SelectionOptions = [toFullRowSelect, toMultiSelect, toRightClickSelect]
+        OnFreeNode = vstMissingMediasFreeNode
+        OnGetText = vstMissingMediasGetText
+        OnPaintText = vstMissingMediasPaintText
+        Touch.InteractiveGestures = [igPan, igPressAndTap]
+        Touch.InteractiveGestureOptions = [igoPanSingleFingerHorizontal, igoPanSingleFingerVertical, igoPanInertia, igoPanGutter, igoParentPassthrough]
         Columns = <
           item
-            Caption = 'System'
-            Width = 120
+            Options = [coAllowClick, coEnabled, coParentBidiMode, coParentColor, coResizable, coShowDropMark, coVisible, coAllowFocus, coStyleColor]
+            Position = 0
+            Text = 'System'
+            Width = 200
           end
           item
-            Caption = 'Game'
-            Width = 600
+            Options = [coAllowClick, coEnabled, coParentBidiMode, coParentColor, coResizable, coShowDropMark, coVisible, coAllowFocus, coStyleColor]
+            Position = 1
+            Text = 'Game'
+            Width = 300
           end
           item
-            Caption = 'File'
+            Options = [coAllowClick, coEnabled, coParentBidiMode, coParentColor, coResizable, coShowDropMark, coVisible, coAllowFocus, coStyleColor]
+            Position = 2
+            Text = 'File'
+            Width = 300
           end
           item
-            Caption = 'Expected'
+            Options = [coAllowClick, coEnabled, coParentBidiMode, coParentColor, coResizable, coShowDropMark, coVisible, coAllowFocus, coStyleColor]
+            Position = 3
+            Text = 'Expected'
+            Width = 200
           end
           item
-            Caption = 'Actual'
+            Options = [coAllowClick, coEnabled, coParentBidiMode, coParentColor, coResizable, coShowDropMark, coVisible, coAllowFocus, coStyleColor]
+            Position = 4
+            Text = 'Actual'
+            Width = 200
           end
           item
-            Caption = 'Type'
+            Options = [coAllowClick, coEnabled, coParentBidiMode, coParentColor, coResizable, coShowDropMark, coVisible, coAllowFocus, coStyleColor]
+            Position = 5
+            Text = 'Type'
+            Width = 100
           end>
-        ReadOnly = True
-        RowSelect = True
-        ParentShowHint = False
-        PopupMenu = popActions
-        ShowHint = False
-        TabOrder = 0
-        ViewStyle = vsReport
-        OnContextPopup = lvContextPopup
-        OnMouseMove = lvMouseMove
       end
     end
   end

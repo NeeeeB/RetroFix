@@ -2,21 +2,24 @@ object frmBiosDetails: TfrmBiosDetails
   Left = 0
   Top = 0
   Caption = 'BIOS Details'
-  ClientHeight = 600
-  ClientWidth = 982
+  ClientHeight = 601
+  ClientWidth = 984
   Color = clBtnFace
+  Constraints.MinHeight = 640
+  Constraints.MinWidth = 1000
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
   Font.Height = -12
   Font.Name = 'Segoe UI'
   Font.Style = []
   Position = poOwnerFormCenter
+  WindowState = wsMaximized
   OnCreate = FormCreate
   TextHeight = 15
   object pnlTop: TPanel
     Left = 0
     Top = 0
-    Width = 982
+    Width = 984
     Height = 50
     Align = alTop
     BevelOuter = bvNone
@@ -106,13 +109,13 @@ object frmBiosDetails: TfrmBiosDetails
       AlignWithMargins = True
       Left = 679
       Top = 3
-      Width = 300
+      Width = 302
       Height = 44
       Align = alClient
       Caption = 'Actions'
       TabOrder = 2
       DesignSize = (
-        300
+        302
         44)
       object btnRescan: TButton
         Left = 8
@@ -150,7 +153,7 @@ object frmBiosDetails: TfrmBiosDetails
         TabOrder = 2
       end
       object btnExportCSV: TButton
-        Left = 203
+        Left = 205
         Top = 15
         Width = 89
         Height = 25
@@ -161,54 +164,11 @@ object frmBiosDetails: TfrmBiosDetails
       end
     end
   end
-  object lvBios: TListView
-    Left = 0
-    Top = 328
-    Width = 982
-    Height = 272
-    BevelInner = bvNone
-    BevelOuter = bvNone
-    BorderStyle = bsNone
-    Color = 5385496
-    Columns = <
-      item
-        Caption = 'System'
-        Width = 120
-      end
-      item
-        Caption = 'File'
-        Width = 160
-      end
-      item
-        Caption = 'Status'
-        Width = 130
-      end
-      item
-        Caption = 'Full path'
-        Width = 180
-      end
-      item
-        Caption = 'Expected MD5'
-        Width = 150
-      end
-      item
-        Caption = 'Actual MD5'
-        Width = 150
-      end>
-    FlatScrollBars = True
-    GroupView = True
-    ReadOnly = True
-    RowSelect = True
-    PopupMenu = popupMenu
-    TabOrder = 2
-    ViewStyle = vsReport
-    OnCustomDrawItem = lvBiosCustomDrawItem
-  end
   object vstBios: TVirtualStringTree
     Left = 0
     Top = 50
-    Width = 982
-    Height = 550
+    Width = 984
+    Height = 551
     AccessibleName = 'Actual MD5'
     Align = alClient
     BevelInner = bvNone
@@ -217,14 +177,13 @@ object frmBiosDetails: TfrmBiosDetails
     Colors.TreeLineColor = clNone
     DefaultNodeHeight = 19
     Header.AutoSizeIndex = 3
-    Header.Height = 15
     Header.Options = [hoColumnResize, hoDrag, hoShowSortGlyphs, hoVisible]
     LineMode = lmBands
     LineStyle = lsSolid
     PopupMenu = popupMenu
     TabOrder = 1
     TreeOptions.MiscOptions = [toFullRepaintOnResize]
-    TreeOptions.SelectionOptions = [toFullRowSelect]
+    TreeOptions.SelectionOptions = [toFullRowSelect, toRightClickSelect]
     OnFreeNode = vstBiosFreeNode
     OnGetText = vstBiosGetText
     OnPaintText = vstBiosPaintText
@@ -232,40 +191,40 @@ object frmBiosDetails: TfrmBiosDetails
     Touch.InteractiveGestureOptions = [igoPanSingleFingerHorizontal, igoPanSingleFingerVertical, igoPanInertia, igoPanGutter, igoParentPassthrough]
     Columns = <
       item
-        Options = [coAllowClick, coDraggable, coEnabled, coParentBidiMode, coParentColor, coResizable, coShowDropMark, coVisible, coAutoSpring, coAllowFocus, coEditable, coStyleColor]
+        Options = [coAllowClick, coEnabled, coParentBidiMode, coParentColor, coResizable, coShowDropMark, coVisible, coAllowFocus, coStyleColor]
         Position = 0
         Text = 'System'
-        Width = 100
+        Width = 300
       end
       item
-        Options = [coAllowClick, coDraggable, coEnabled, coParentBidiMode, coParentColor, coResizable, coShowDropMark, coVisible, coAutoSpring, coAllowFocus, coEditable, coStyleColor]
+        Options = [coAllowClick, coEnabled, coParentBidiMode, coParentColor, coResizable, coShowDropMark, coVisible, coAllowFocus, coStyleColor]
         Position = 1
         Text = 'File'
-        Width = 100
+        Width = 300
       end
       item
-        Options = [coAllowClick, coDraggable, coEnabled, coParentBidiMode, coParentColor, coResizable, coShowDropMark, coVisible, coAutoSpring, coAllowFocus, coEditable, coStyleColor]
+        Options = [coAllowClick, coEnabled, coParentBidiMode, coParentColor, coResizable, coShowDropMark, coVisible, coAllowFocus, coStyleColor]
         Position = 2
         Text = 'Status'
-        Width = 100
+        Width = 200
       end
       item
-        Options = [coAllowClick, coDraggable, coEnabled, coParentBidiMode, coParentColor, coResizable, coShowDropMark, coVisible, coAutoSpring, coAllowFocus, coEditable, coStyleColor]
+        Options = [coAllowClick, coEnabled, coParentBidiMode, coParentColor, coResizable, coShowDropMark, coVisible, coAutoSpring, coAllowFocus, coStyleColor]
         Position = 3
         Text = 'Full path'
         Width = 482
       end
       item
-        Options = [coAllowClick, coDraggable, coEnabled, coParentBidiMode, coParentColor, coResizable, coShowDropMark, coVisible, coAutoSpring, coAllowFocus, coEditable, coStyleColor]
+        Options = [coAllowClick, coEnabled, coParentBidiMode, coParentColor, coResizable, coShowDropMark, coVisible, coAllowFocus, coStyleColor]
         Position = 4
         Text = 'Expected MD5'
-        Width = 100
+        Width = 200
       end
       item
-        Options = [coAllowClick, coDraggable, coEnabled, coParentBidiMode, coParentColor, coResizable, coShowDropMark, coVisible, coAutoSpring, coAllowFocus, coEditable, coStyleColor]
+        Options = [coAllowClick, coEnabled, coParentBidiMode, coParentColor, coResizable, coShowDropMark, coVisible, coAllowFocus, coStyleColor]
         Position = 5
         Text = 'Actual MD5'
-        Width = 100
+        Width = 200
       end>
   end
   object popupMenu: TPopupMenu
