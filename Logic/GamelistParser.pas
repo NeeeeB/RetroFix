@@ -9,7 +9,8 @@ uses
 function parseGamelist( const aRomDir: string;
                         const aSystemName: string ): TGamelistResult;
 
-function addGameToGamelist( const aRomDir: string;
+function addGameToGamelist( aSettings: TSettings;
+                            const aRomDir: string;
                             const aEntry: TGameEntry ): Boolean;
 
 function removeGamesFromGamelist( const aRomDir: string;
@@ -127,8 +128,9 @@ begin
    end;
 end;
 
-function addGameToGamelist( const aRomDir: string;
-                             const aEntry: TGameEntry ): Boolean;
+function addGameToGamelist( aSettings: TSettings;
+                            const aRomDir: string;
+                            const aEntry: TGameEntry ): Boolean;
 
    procedure addElement( aGameNode: TXmlNode;
                          const aTag, aValue: string );
@@ -151,7 +153,7 @@ begin
    if ( _root.IsEmpty ) then
       Exit;
 
-   var _relPath:= './'+TPath.GetFileName( aEntry.romPath );
+   var _relPath:= aEntry.romPath.Replace( aRomDir, '.' ).Replace( '\', '/' );
 
    // Check if game already exists — use path, not id
    var _existing:= _root.FirstChild;
@@ -222,8 +224,10 @@ begin
    // Build set of relative paths for O(1) lookup
    var _toRemove:= TDictionary<string, Boolean>.Create;
    try
-      for var _p in aRomPaths do
-         _toRemove.TryAdd( './'+TPath.GetFileName( _p ), True );
+      for var _p in aRomPaths do begin
+         var _relPath:= _p.Replace( aRomDir, '.' ).Replace( '\', '/' );
+         _toRemove.TryAdd( _relPath, True );
+      end;
 
       var _doc:= TXmlDocument.Create;
       _doc.Load( _gamelistPath );

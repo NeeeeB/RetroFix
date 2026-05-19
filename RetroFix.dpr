@@ -22,7 +22,8 @@ uses
   Types in 'Shared\Types.pas',
   ConfirmDelete in 'Forms\ConfirmDelete.pas' {Form1},
   ESApi in 'Network\ESApi.pas',
-  RetrobatBrowser in 'Forms\RetrobatBrowser.pas' {Form2};
+  RetrobatBrowser in 'Forms\RetrobatBrowser.pas' {Form2},
+  EsSystemsReader in 'Logic\EsSystemsReader.pas';
 
 {$R *.res}
 

@@ -183,7 +183,7 @@ object frmBiosDetails: TfrmBiosDetails
     PopupMenu = popupMenu
     TabOrder = 1
     TreeOptions.MiscOptions = [toFullRepaintOnResize]
-    TreeOptions.PaintOptions = [toShowButtons, toShowDropmark, toShowHorzGridLines, toShowRoot, toShowTreeLines, toThemeAware, toUseBlendedImages, toFullVertGridLines]
+    TreeOptions.PaintOptions = [toShowButtons, toShowDropmark, toShowHorzGridLines, toShowRoot, toShowTreeLines, toShowVertGridLines, toThemeAware, toUseBlendedImages, toFullVertGridLines]
     TreeOptions.SelectionOptions = [toFullRowSelect, toRightClickSelect]
     OnFreeNode = vstBiosFreeNode
     OnGetText = vstBiosGetText

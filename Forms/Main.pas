@@ -70,6 +70,7 @@ type
       FRetrobatBrowser: TfrmRetrobatBrowser;
       FSSUserInfo: TSSUserInfo;
       FSSSystemsMapping: TDictionary<string, Integer>;
+      FSystemExtensions: TDictionary<string, TArray<string>>;
       function tryAndLoadSettings: Boolean;
       function retrobatFolderValidation( const aFolderPath: string ): TValidFolder;
       function getBaseFolder: string;
@@ -101,6 +102,7 @@ uses
    BiosChecker,
    GamelistChecker,
    EsSettingsReader,
+   EsSystemsReader,
    Settings,
    ScreenScraperApi,
    ESApi;
@@ -126,6 +128,7 @@ begin
          FLoading:= False;
       end;
       readEsSettings( FSettings.retrobatPath, FSettings );
+      FSystemExtensions:= readEsSystemsExtensions( FSettings.retrobatPath );
       checkESAvailability;
    end;
 end;
@@ -266,6 +269,8 @@ begin
       gbxActions.Enabled:= ( _valid = vfValid );
       setLabelTextAndColor( _valid );
       readEsSettings( FSettings.retrobatPath, FSettings );
+      FSystemExtensions.Free;
+      FSystemExtensions:= readEsSystemsExtensions( FSettings.retrobatPath );
       checkESAvailability;
    end;
 end;
@@ -424,7 +429,7 @@ begin
                TFile.WriteAllText( _biosJsonPath, _json, TEncoding.UTF8 );
          end;
 
-         FGamelistResults:= checkGamelists( _romsDir, _biosJsonPath, onGamelistProgress );
+         FGamelistResults:= checkGamelists( _romsDir, _biosJsonPath, FSystemExtensions, onGamelistProgress );
          displayGamelistSummary( computeGamelistSummary( FGamelistResults ) );
          btnGamelistScanDetails.Enabled:= True;
       finally
@@ -575,6 +580,7 @@ begin
    FGamelistResults.Free;
    FSSSystemsMapping.Free;
    FRetrobatBrowser.Free;
+   FSystemExtensions.Free;
 end;
 
 end.

@@ -270,10 +270,8 @@ end;
 procedure TfrmGamelistDetails.popActionsPopup(Sender: TObject);
 begin
    var _vst:= pgcMain.ActivePage.Controls[0] as TVirtualStringTree;
-   if ( pgcMain.ActivePage = tbsOrphans ) then
-      mniOpenFolder.Enabled:= ( _vst.SelectedCount = 1 )
-   else
-      mniOpenFolder.Enabled:= ( _vst.SelectedCount > 0 );
+
+   mniOpenFolder.Enabled:= ( _vst.SelectedCount = 1 );
 
    mniDeleteOrphan.Visible:= ( pgcMain.ActivePage = tbsOrphans ) and
                              ( vstOrphans.SelectedCount > 0 );
@@ -1422,7 +1420,7 @@ begin
                      _entry.medias      := _downloadedMedias.ToArray;
                      _entry.isScraped   := ( _downloadedMedias.Count > 0 );
 
-                     addGameToGamelist( _romDir, _entry );
+                     addGameToGamelist( FSettings, _romDir, _entry );
                   finally
                      _downloadedMedias.Free;
                   end;

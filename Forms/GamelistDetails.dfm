@@ -130,7 +130,7 @@ object frmGamelistDetails: TfrmGamelistDetails
         PopupMenu = popActions
         TabOrder = 0
         TreeOptions.MiscOptions = [toFullRepaintOnResize]
-        TreeOptions.PaintOptions = [toShowButtons, toShowDropmark, toShowHorzGridLines, toShowRoot, toShowTreeLines, toThemeAware, toUseBlendedImages, toFullVertGridLines]
+        TreeOptions.PaintOptions = [toShowButtons, toShowDropmark, toShowHorzGridLines, toShowRoot, toShowTreeLines, toShowVertGridLines, toThemeAware, toUseBlendedImages, toFullVertGridLines]
         TreeOptions.SelectionOptions = [toFullRowSelect, toMultiSelect, toRightClickSelect]
         OnFreeNode = vstMissingRomsFreeNode
         OnGetText = vstMissingRomsGetText
@@ -183,7 +183,7 @@ object frmGamelistDetails: TfrmGamelistDetails
         PopupMenu = popActions
         TabOrder = 0
         TreeOptions.MiscOptions = [toFullRepaintOnResize]
-        TreeOptions.PaintOptions = [toShowButtons, toShowDropmark, toShowHorzGridLines, toShowRoot, toShowTreeLines, toThemeAware, toUseBlendedImages, toFullVertGridLines]
+        TreeOptions.PaintOptions = [toShowButtons, toShowDropmark, toShowHorzGridLines, toShowRoot, toShowTreeLines, toShowVertGridLines, toThemeAware, toUseBlendedImages, toFullVertGridLines]
         TreeOptions.SelectionOptions = [toFullRowSelect, toMultiSelect, toRightClickSelect]
         OnFreeNode = vstUnscrapedFreeNode
         OnGetText = vstUnscrapedGetText
@@ -229,7 +229,7 @@ object frmGamelistDetails: TfrmGamelistDetails
         PopupMenu = popActions
         TabOrder = 0
         TreeOptions.MiscOptions = [toFullRepaintOnResize]
-        TreeOptions.PaintOptions = [toShowButtons, toShowDropmark, toShowHorzGridLines, toShowRoot, toShowTreeLines, toThemeAware, toUseBlendedImages, toFullVertGridLines]
+        TreeOptions.PaintOptions = [toShowButtons, toShowDropmark, toShowHorzGridLines, toShowRoot, toShowTreeLines, toShowVertGridLines, toThemeAware, toUseBlendedImages, toFullVertGridLines]
         TreeOptions.SelectionOptions = [toFullRowSelect, toMultiSelect, toRightClickSelect]
         OnFreeNode = vstMissingMediasFreeNode
         OnGetText = vstMissingMediasGetText
@@ -288,7 +288,7 @@ object frmGamelistDetails: TfrmGamelistDetails
         PopupMenu = popActions
         TabOrder = 0
         TreeOptions.MiscOptions = [toFullRepaintOnResize]
-        TreeOptions.PaintOptions = [toShowButtons, toShowDropmark, toShowHorzGridLines, toShowRoot, toShowTreeLines, toThemeAware, toUseBlendedImages, toFullVertGridLines]
+        TreeOptions.PaintOptions = [toShowButtons, toShowDropmark, toShowHorzGridLines, toShowRoot, toShowTreeLines, toShowVertGridLines, toThemeAware, toUseBlendedImages, toFullVertGridLines]
         TreeOptions.SelectionOptions = [toFullRowSelect, toMultiSelect, toRightClickSelect]
         OnFreeNode = vstNoMediaFreeNode
         OnGetText = vstNoMediaGetText
@@ -340,7 +340,7 @@ object frmGamelistDetails: TfrmGamelistDetails
         PopupMenu = popActions
         TabOrder = 0
         TreeOptions.MiscOptions = [toFullRepaintOnResize]
-        TreeOptions.PaintOptions = [toShowButtons, toShowDropmark, toShowHorzGridLines, toShowRoot, toShowTreeLines, toThemeAware, toUseBlendedImages, toFullVertGridLines]
+        TreeOptions.PaintOptions = [toShowButtons, toShowDropmark, toShowHorzGridLines, toShowRoot, toShowTreeLines, toShowVertGridLines, toThemeAware, toUseBlendedImages, toFullVertGridLines]
         TreeOptions.SelectionOptions = [toFullRowSelect, toMultiSelect, toRightClickSelect]
         OnFreeNode = vstOrphansFreeNode
         OnGetText = vstOrphansGetText
@@ -386,7 +386,7 @@ object frmGamelistDetails: TfrmGamelistDetails
         PopupMenu = popActions
         TabOrder = 0
         TreeOptions.MiscOptions = [toFullRepaintOnResize]
-        TreeOptions.PaintOptions = [toShowButtons, toShowDropmark, toShowHorzGridLines, toShowRoot, toShowTreeLines, toThemeAware, toUseBlendedImages, toFullVertGridLines]
+        TreeOptions.PaintOptions = [toShowButtons, toShowDropmark, toShowHorzGridLines, toShowRoot, toShowTreeLines, toShowVertGridLines, toThemeAware, toUseBlendedImages, toFullVertGridLines]
         TreeOptions.SelectionOptions = [toFullRowSelect, toMultiSelect, toRightClickSelect]
         OnFreeNode = vstMissingMediasFreeNode
         OnGetText = vstMissingMediasGetText

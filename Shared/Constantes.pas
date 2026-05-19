@@ -132,6 +132,8 @@ const
    cstManuals                = 'manuals';
    cstXmlExtension           = '.xml';
    cstXmlGameList            = 'gameList';
+   cstXmlSystem              = 'system';
+   cstXmlExtensionTag        = 'extension';
 
    // API ScreenScraper
    cstSSSoftName         = 'RetroFix';
@@ -216,6 +218,7 @@ const
    cstSSSysteme              = 'systeme';
 
    // ES settings
+   cstEsSystemsFile      = 'es_systems.cfg';
    cstEsScrapperImageKey = 'ScrapperImageSrc';
    cstEsScrapperLogoKey  = 'ScrapperLogoSrc';
    cstEsScrapperThumbKey = 'ScrapperThumbSrc';

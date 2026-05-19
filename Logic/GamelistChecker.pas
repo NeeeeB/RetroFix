@@ -12,7 +12,9 @@ type
 
 function checkGamelists( const aRomsDir: string;
                          const aBiosJsonPath: string;
+                         aSystemExtensions: TDictionary<string, TArray<string>>;
                          aOnProgress: TGamelistProgressCallback ): TObjectList<TGamelistResult>;
+
 function checkOrphanMedias( const aRomDir: string;
                             const aGames: TArray<TGameEntry> ): TArray<string>;
 
@@ -70,20 +72,40 @@ end;
 
 function checkGamelists( const aRomsDir: string;
                          const aBiosJsonPath: string;
+                         aSystemExtensions: TDictionary<string, TArray<string>>;
                          aOnProgress: TGamelistProgressCallback ): TObjectList<TGamelistResult>;
 
    function getRomFiles( const aDir: string;
-                         const aBiosFiles: TArray<string> ): TArray<string>;
+                         const aBiosFiles: TArray<string>;
+                         const aValidExtensions: TArray<string> ): TArray<string>;
+
+      procedure scan( const aCurrentDir: string; aList: TList<string> );
+      begin
+         for var _f in TDirectory.GetFiles( aCurrentDir ) do begin
+            var _ext := LowerCase( TPath.GetExtension( _f ) );
+            var _name:= LowerCase( TPath.GetFileName( _f ) );
+            if ( Length( aValidExtensions ) > 0 ) then begin
+               if ( IndexStr( _ext, aValidExtensions ) < 0 ) then Continue;
+            end else begin
+               if ( IndexStr( _ext, cstExcludedRomExtensions ) >= 0 ) then Continue;
+            end;
+            if ( IndexStr( _name, aBiosFiles ) >= 0 ) then Continue;
+            aList.Add( _f );
+         end;
+         for var _subDir in TDirectory.GetDirectories( aCurrentDir ) do begin
+            var _dirName:= LowerCase( TPath.GetFileName( _subDir ) );
+            if ( _dirName = LowerCase( cstImages ) ) or
+               ( _dirName = LowerCase( cstVideos ) ) or
+               ( _dirName = LowerCase( cstManuals ) ) then
+               Continue;
+            scan( _subDir, aList );
+         end;
+      end;
+
    begin
       var _list:= TList<string>.Create;
       try
-         for var _f in TDirectory.GetFiles( aDir ) do begin
-            var _ext:= LowerCase( TPath.GetExtension( _f ) );
-            var _name:= LowerCase( TPath.GetFileName( _f ) );
-            if ( IndexStr( _ext, cstExcludedRomExtensions ) < 0 ) and
-               ( IndexStr( _name, aBiosFiles ) < 0 ) then
-               _list.Add( _f );
-         end;
+         scan( aDir, _list );
          Result:= _list.ToArray;
       finally
          _list.Free;
@@ -114,9 +136,13 @@ begin
       if ( Assigned( aOnProgress ) ) then
          aOnProgress( _systemName, Succ( ii ), _total );
 
+      var _validExts: TArray<string>;
+      if ( aSystemExtensions <> nil ) then
+         aSystemExtensions.TryGetValue( LowerCase( _systemName ), _validExts );
+
       var _gamelistPath:= TPath.Combine( _systemDir, cstGamelistFile );
       if ( not TFile.Exists( _gamelistPath ) ) then begin
-         var _romFiles:= getRomFiles( _systemDir, _biosFiles );
+         var _romFiles:= getRomFiles( _systemDir, _biosFiles, _validExts );
          if ( Length( _romFiles ) > 0 ) then begin
             var _result:= TGamelistResult.Create;
             _result.systemName:= _systemName;
@@ -150,7 +176,7 @@ begin
          end;
 
          // Count total ROMs on disk
-         var _romFiles:= getRomFiles( _systemDir, _biosFiles );
+         var _romFiles:= getRomFiles( _systemDir, _biosFiles, _validExts );
          _result.totalRoms:= Length( _romFiles );
 
          // Check unscraped ROMs
