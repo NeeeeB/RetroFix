@@ -1043,67 +1043,99 @@ begin
       Exit;
 
    Screen.Cursor:= crHourGlass;
+
+   // Collect refs grouped by gamelistResult
+   var _refsByResult:= TDictionary<TGamelistResult, TList<TGameEntryRef>>.Create;
    var _affectedResults:= TList<TGamelistResult>.Create;
    try
       var _node:= vstMissingRoms.GetFirstSelected;
       while ( _node <> nil ) do begin
-         var _nextNode:= vstMissingRoms.GetNextSelected( _node );
          var _data:= PGamelistNodeData( vstMissingRoms.GetNodeData( _node ) );
          if ( _data <> nil ) and ( not _data.isGroup ) and ( _data.ref <> nil ) then begin
-            var _ref:= _data.ref;;
-            if removeGameFromGamelist( _ref.gamelistResult.romDir, _ref.romPath ) then begin
-               // Update FResults
-               var _gamesList:= TList<TGameEntry>.Create;
-               try
-                  for var _g in _ref.gamelistResult.games do begin
-                     if ( _g.romPath <> _ref.romPath ) then
-                        _gamesList.Add( _g );
-                  end;
-                  _ref.gamelistResult.games:= _gamesList.ToArray;
-               finally
-                  _gamesList.Free;
-               end;
-               var _missingList:= TList<string>.Create;
-               try
-                  for var _s in _ref.gamelistResult.missingROMs do begin
-                     if ( _s <> _ref.romPath ) then
-                        _missingList.Add( _s );
-                  end;
-                  _ref.gamelistResult.missingROMs:= _missingList.ToArray;
-               finally
-                  _missingList.Free;
-               end;
-               if ( not _affectedResults.Contains( _ref.gamelistResult ) ) then
-                  _affectedResults.Add( _ref.gamelistResult );
+            var _ref:= _data.ref;
+            if ( not _refsByResult.ContainsKey( _ref.gamelistResult ) ) then begin
+               _refsByResult.Add( _ref.gamelistResult, TList<TGameEntryRef>.Create );
+               _affectedResults.Add( _ref.gamelistResult );
+            end;
+            _refsByResult[_ref.gamelistResult].Add( _ref );
+         end;
+         _node:= vstMissingRoms.GetNextSelected( _node );
+      end;
 
-               if ( _deleteOrphans ) then begin
-                  var _romName:= TPath.GetFileNameWithoutExtension( _ref.romPath );
-                  for var _subDir in [cstImages, cstVideos, cstManuals] do begin
-                     var _path:= TPath.Combine( _ref.gamelistResult.romDir, _subDir );
-                     if ( TDirectory.Exists( _path ) ) then begin
-                        for var _f in TDirectory.GetFiles( _path ) do begin
-                           if ( TPath.GetFileName( _f ).StartsWith( _romName ) ) then
-                              TFile.Delete( _f );
-                        end;
+      // One pass per gamelist
+      for var _r in _affectedResults do begin
+         var _refs:= _refsByResult[_r];
+
+         // Build array of rom paths to remove
+         var _romPaths: TArray<string>;
+         for var _ref in _refs do
+            _romPaths:= _romPaths + [_ref.romPath];
+
+         // Remove all at once from gamelist
+         removeGamesFromGamelist( _r.romDir, _romPaths );
+
+         // Update FResults
+         var _gamesList:= TList<TGameEntry>.Create;
+         try
+            for var _g in _r.games do begin
+               var _found:= False;
+               for var _p in _romPaths do
+                  if ( _g.romPath = _p ) then begin _found:= True; Break; end;
+               if ( not _found ) then _gamesList.Add( _g );
+            end;
+            _r.games:= _gamesList.ToArray;
+         finally
+            _gamesList.Free;
+         end;
+
+         var _missingList:= TList<string>.Create;
+         try
+            for var _s in _r.missingROMs do begin
+               var _found:= False;
+               for var _p in _romPaths do begin
+                  if ( _s = _p ) then begin
+                     _found:= True;
+                     Break;
+                  end;
+               end;
+               if ( not _found ) then _missingList.Add( _s );
+            end;
+            _r.missingROMs:= _missingList.ToArray;
+         finally
+            _missingList.Free;
+         end;
+
+         // Delete orphans if requested
+         if ( _deleteOrphans ) then
+            for var _ref in _refs do begin
+               var _romName:= TPath.GetFileNameWithoutExtension( _ref.romPath );
+               for var _subDir in [cstImages, cstVideos, cstManuals] do begin
+                  var _path:= TPath.Combine( _r.romDir, _subDir );
+                  if ( TDirectory.Exists( _path ) ) then begin
+                     for var _f in TDirectory.GetFiles( _path ) do begin
+                        if ( TPath.GetFileName( _f ).StartsWith( _romName ) ) then
+                           TFile.Delete( _f );
                      end;
                   end;
                end;
             end;
-         end;
-         _node:= _nextNode;
-      end;
-      // Reparse affected gamelists to update orphans and missing medias
-      for var _r in _affectedResults do begin
+
+         // Reparse
          var _newResult:= parseGamelist( _r.romDir, _r.systemName );
          _r.games:= _newResult.games;
          _r.missingMedias:= _newResult.missingMedias;
          _r.orphanMedias:= checkOrphanMedias( _r.romDir, _r.games );
          _newResult.Free;
       end;
+
    finally
+      for var _list in _refsByResult.Values do
+         _list.Free;
+      _refsByResult.Free;
       _affectedResults.Free;
       Screen.Cursor:= crDefault;
    end;
+
    populateTrees;
    updateStats( getFilteredResults );
    if ( Assigned( FOnSummaryUpdate ) ) then

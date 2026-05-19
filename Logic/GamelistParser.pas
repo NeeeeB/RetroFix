@@ -12,8 +12,8 @@ function parseGamelist( const aRomDir: string;
 function addGameToGamelist( const aRomDir: string;
                             const aEntry: TGameEntry ): Boolean;
 
-function removeGameFromGamelist( const aRomDir: string;
-                                 const aRomPath: string ): Boolean;
+function removeGamesFromGamelist( const aRomDir: string;
+                                  const aRomPaths: TArray<string> ): Boolean;
 
 function getFullNameFromShortName( const aShortName: string ): string;
 
@@ -212,41 +212,44 @@ begin
    Result:= True;
 end;
 
-function removeGameFromGamelist( const aRomDir: string;
-                                 const aRomPath: string ): Boolean;
+function removeGamesFromGamelist( const aRomDir: string;
+                                  const aRomPaths: TArray<string> ): Boolean;
 begin
    Result:= False;
    var _gamelistPath:= TPath.Combine( aRomDir, cstGamelistFile );
-   if ( not TFile.Exists( _gamelistPath ) ) then
-      Exit;
+   if ( not TFile.Exists( _gamelistPath ) ) then Exit;
 
-   var _doc:= TXmlDocument.Create;
-   _doc.Load( _gamelistPath );
-   var _root:= _doc.DocumentElement;
-   if ( _root.IsEmpty ) then
-      Exit;
+   // Build set of relative paths for O(1) lookup
+   var _toRemove:= TDictionary<string, Boolean>.Create;
+   try
+      for var _p in aRomPaths do
+         _toRemove.TryAdd( './'+TPath.GetFileName( _p ), True );
 
-   // Build relative path to match against gamelist entries
-   var _relPath:= './'+TPath.GetFileName( aRomPath );
+      var _doc:= TXmlDocument.Create;
+      _doc.Load( _gamelistPath );
+      var _root:= _doc.DocumentElement;
+      if ( _root.IsEmpty ) then Exit;
 
-   var _node:= _root.FirstChild;
-   while ( not _node.IsEmpty ) do begin
-      var _next:= _node.NextSibling;
-      if ( _node.NodeType = TXmlNodeType.Element ) and
-         ( _node.Value = cstXmlGame ) then begin
-         var _pathNode:= _node.ElementByName( cstXmlPath );
-         if ( not _pathNode.IsEmpty ) and
-            ( _pathNode.Text = _relPath ) then begin
-            _root.RemoveChild( _node );
-            Result:= True;
-            Break;
+      var _node:= _root.FirstChild;
+      while ( not _node.IsEmpty ) do begin
+         var _next:= _node.NextSibling;
+         if ( _node.NodeType = TXmlNodeType.Element ) and
+            ( _node.Value = cstXmlGame ) then begin
+            var _pathNode:= _node.ElementByName( cstXmlPath );
+            if ( not _pathNode.IsEmpty ) and
+               ( _toRemove.ContainsKey( _pathNode.Text ) ) then begin
+               _root.RemoveChild( _node );
+               Result:= True;
+            end;
          end;
+         _node:= _next;
       end;
-      _node:= _next;
-   end;
 
-   if ( Result ) then
-      _doc.Save( _gamelistPath );
+      if ( Result ) then
+         _doc.Save( _gamelistPath );
+   finally
+      _toRemove.Free;
+   end;
 end;
 
 function getFullNameFromShortName( const aShortName: string ): string;
