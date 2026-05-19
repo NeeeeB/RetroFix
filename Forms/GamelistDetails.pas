@@ -117,6 +117,7 @@ type
                                      Node: PVirtualNode;
                                      Column: TColumnIndex;
                                      TextType: TVSTTextType );
+      procedure vstMouseMove( Sender: TObject; Shift: TShiftState; X, Y: Integer );
 
 
    private
@@ -253,11 +254,14 @@ begin
       Winapi.Windows.SendMessage( pgcMain.Handle, TCM_GETITEMRECT,
                                   ii, LPARAM( @_rect ) );
       if ( _rect.Contains( Point( X, Y ) ) ) then begin
-         if ( ii <= High( cstHints ) ) then
-            pgcMain.Hint:= cstHints[ii]
-         else
-            pgcMain.Hint:= '';
-         Exit;
+         if ( ii <= High( cstHints ) ) then begin
+            if ( pgcMain.Hint <> cstHints[ii] ) then begin
+               pgcMain.Hint:= '';
+               Application.CancelHint;
+               pgcMain.Hint:= cstHints[ii];
+            end;
+            Exit;
+         end;
       end;
    end;
    pgcMain.Hint:= '';
@@ -359,45 +363,47 @@ begin
                   if ( not _g.md5.IsEmpty ) then begin
                      var _actualMD5:= fileMD5( _g.romPath );
                      if ( FCancelled ) then Exit;
-                     if ( _actualMD5 <> LowerCase( _g.md5 ) ) then
+                     if ( _actualMD5 <> LowerCase( _g.md5 ) ) then begin
                         TThread.Synchronize( nil, procedure
                         begin
                            if ( FFormDestroyed ) then Exit;
                            var _ref:= TGameEntryRef.Create;
-                           _ref.systemName   := _r.systemName;
-                           _ref.gameName     := _g.name;
-                           _ref.romPath      := _g.romPath;
+                           _ref.systemName:= _r.systemName;
+                           _ref.gameName:= _g.name;
+                           _ref.romPath:= _g.romPath;
                            _ref.gamelistResult:= _r;
                            FGameEntryRefs.Add( _ref );
                            var _node:= vstHashMismatch.AddChild( nil );
                            var _data:= PHashMismatchNodeData( vstHashMismatch.GetNodeData( _node ) );
-                           _data.ref         := _ref;
+                           _data.ref:= _ref;
                            _data.expectedHash:= LowerCase( _g.md5 );
-                           _data.actualHash  := _actualMD5;
-                           _data.hashType    := 'MD5';
+                           _data.actualHash:= _actualMD5;
+                           _data.hashType:= 'MD5';
                         end );
+                     end;
                   end;
 
                   if ( not _g.crc32.IsEmpty ) then begin
                      var _actualCRC32:= fileCRC32( _g.romPath );
                      if ( FCancelled ) then Exit;
-                     if ( _actualCRC32 <> LowerCase( _g.crc32 ) ) then
+                     if ( _actualCRC32 <> LowerCase( _g.crc32 ) ) then begin
                         TThread.Synchronize( nil, procedure
                         begin
                            if ( FFormDestroyed ) then Exit;
                            var _ref:= TGameEntryRef.Create;
-                           _ref.systemName   := _r.systemName;
-                           _ref.gameName     := _g.name;
-                           _ref.romPath      := _g.romPath;
+                           _ref.systemName:= _r.systemName;
+                           _ref.gameName:= _g.name;
+                           _ref.romPath:= _g.romPath;
                            _ref.gamelistResult:= _r;
                            FGameEntryRefs.Add( _ref );
                            var _node:= vstHashMismatch.AddChild( nil );
                            var _data:= PHashMismatchNodeData( vstHashMismatch.GetNodeData( _node ) );
-                           _data.ref         := _ref;
+                           _data.ref:= _ref;
                            _data.expectedHash:= LowerCase( _g.crc32 );
-                           _data.actualHash  := _actualCRC32;
-                           _data.hashType    := 'CRC32';
+                           _data.actualHash:= _actualCRC32;
+                           _data.hashType:= 'CRC32';
                         end );
+                     end;
                   end;
                end;
             end;
@@ -470,17 +476,18 @@ begin
          for var _r in aResults do begin
             for var _path in _r.missingROMs do begin
                var _gameName:= '';
-               for var _g in _r.games do
+               for var _g in _r.games do begin
                   if ( _g.romPath = _path ) then begin
                      _gameName:= _g.name;
                      Break;
                   end;
+               end;
 
                // Create ref
                var _ref:= TGameEntryRef.Create;
-               _ref.systemName   := _r.systemName;
-               _ref.gameName     := _gameName;
-               _ref.romPath      := _path;
+               _ref.systemName:= _r.systemName;
+               _ref.gameName:= _gameName;
+               _ref.romPath:= _path;
                _ref.gamelistResult:= _r;
                FGameEntryRefs.Add( _ref );
 
@@ -490,9 +497,9 @@ begin
                   if ( not _groups.TryGetValue( _r.systemName, _groupNode ) ) then begin
                      _groupNode:= vstMissingRoms.AddChild( nil );
                      var _groupData:= PGamelistNodeData( vstMissingRoms.GetNodeData( _groupNode ) );
-                     _groupData.isGroup  := True;
-                     _groupData.groupText:= _r.systemName;
-                     _groupData.ref      := nil;
+                     _groupData.isGroup:= True;
+                     _groupData.groupText:= getFullNameFromShortName( _r.systemName );
+                     _groupData.ref:= nil;
                      vstMissingRoms.Expanded[_groupNode]:= True;
                      _groups.Add( _r.systemName, _groupNode );
                   end;
@@ -501,9 +508,9 @@ begin
                // Item node
                var _node:= vstMissingRoms.AddChild( _groupNode );
                var _data:= PGamelistNodeData( vstMissingRoms.GetNodeData( _node ) );
-               _data.isGroup  := False;
+               _data.isGroup:= False;
                _data.groupText:= '';
-               _data.ref      := _ref;
+               _data.ref:= _ref;
             end;
          end;
       finally
@@ -533,6 +540,12 @@ begin
       1: CellText:= _data.ref.gameName;
       2: CellText:= _data.ref.romPath;
    end;
+end;
+
+procedure TfrmGamelistDetails.vstMouseMove( Sender: TObject; Shift: TShiftState; X, Y: Integer );
+begin
+   pgcMain.Hint:= '';
+   Application.CancelHint;
 end;
 
 procedure TfrmGamelistDetails.vstMissingRomsPaintText( Sender: TBaseVirtualTree;
@@ -567,8 +580,8 @@ begin
          for var _r in aResults do begin
             for var _path in _r.unscrapedROMs do begin
                var _ref:= TGameEntryRef.Create;
-               _ref.systemName   := _r.systemName;
-               _ref.romPath      := _path;
+               _ref.systemName:= _r.systemName;
+               _ref.romPath:= _path;
                _ref.gamelistResult:= _r;
                FGameEntryRefs.Add( _ref );
 
@@ -577,9 +590,9 @@ begin
                   if ( not _groups.TryGetValue( _r.systemName, _groupNode ) ) then begin
                      _groupNode:= vstUnscraped.AddChild( nil );
                      var _groupData:= PGamelistNodeData( vstUnscraped.GetNodeData( _groupNode ) );
-                     _groupData.isGroup  := True;
-                     _groupData.groupText:= _r.systemName;
-                     _groupData.ref      := nil;
+                     _groupData.isGroup:= True;
+                     _groupData.groupText:= getFullNameFromShortName( _r.systemName );
+                     _groupData.ref:= nil;
                      vstUnscraped.Expanded[_groupNode]:= True;
                      _groups.Add( _r.systemName, _groupNode );
                   end;
@@ -587,9 +600,9 @@ begin
 
                var _node:= vstUnscraped.AddChild( _groupNode );
                var _data:= PGamelistNodeData( vstUnscraped.GetNodeData( _node ) );
-               _data.isGroup  := False;
+               _data.isGroup:= False;
                _data.groupText:= '';
-               _data.ref      := _ref;
+               _data.ref:= _ref;
             end;
          end;
       finally
@@ -654,11 +667,11 @@ begin
                for var _m in _g.medias do
                   if ( not _m.exists ) then begin
                      var _ref:= TGameEntryRef.Create;
-                     _ref.systemName   := _r.systemName;
-                     _ref.gameName     := _g.name;
-                     _ref.romPath      := _g.romPath;
-                     _ref.mediaPath    := _m.path;
-                     _ref.mediaType    := _m.mediaType;
+                     _ref.systemName:= _r.systemName;
+                     _ref.gameName:= _g.name;
+                     _ref.romPath:= _g.romPath;
+                     _ref.mediaPath:= _m.path;
+                     _ref.mediaType:= _m.mediaType;
                      _ref.gamelistResult:= _r;
                      FGameEntryRefs.Add( _ref );
 
@@ -667,9 +680,9 @@ begin
                         if ( not _groups.TryGetValue( _r.systemName, _groupNode ) ) then begin
                            _groupNode:= vstMissingMedias.AddChild( nil );
                            var _groupData:= PGamelistNodeData( vstMissingMedias.GetNodeData( _groupNode ) );
-                           _groupData.isGroup  := True;
-                           _groupData.groupText:= _r.systemName;
-                           _groupData.ref      := nil;
+                           _groupData.isGroup:= True;
+                           _groupData.groupText:= getFullNameFromShortName( _r.systemName );
+                           _groupData.ref:= nil;
                            vstMissingMedias.Expanded[_groupNode]:= True;
                            _groups.Add( _r.systemName, _groupNode );
                         end;
@@ -677,9 +690,9 @@ begin
 
                      var _node:= vstMissingMedias.AddChild( _groupNode );
                      var _data:= PGamelistNodeData( vstMissingMedias.GetNodeData( _node ) );
-                     _data.isGroup  := False;
+                     _data.isGroup:= False;
                      _data.groupText:= '';
-                     _data.ref      := _ref;
+                     _data.ref:= _ref;
                   end;
       finally
          _groups.Free;
@@ -754,7 +767,7 @@ begin
                      _groupNode:= vstOrphans.AddChild( nil );
                      var _groupData:= PGamelistNodeData( vstOrphans.GetNodeData( _groupNode ) );
                      _groupData.isGroup:= True;
-                     _groupData.groupText:= _r.systemName;
+                     _groupData.groupText:= getFullNameFromShortName( _r.systemName );
                      _groupData.ref:= nil;
                      vstOrphans.Expanded[_groupNode]:= True;
                      _groups.Add( _r.systemName, _groupNode );
@@ -778,10 +791,10 @@ begin
 end;
 
 procedure TfrmGamelistDetails.vstOrphansGetText( Sender: TBaseVirtualTree;
-                                                  Node: PVirtualNode;
-                                                  Column: TColumnIndex;
-                                                  TextType: TVSTTextType;
-                                                  var CellText: string );
+                                                 Node: PVirtualNode;
+                                                 Column: TColumnIndex;
+                                                 TextType: TVSTTextType;
+                                                 var CellText: string );
 begin
    var _data:= PGamelistNodeData( Sender.GetNodeData( Node ) );
    if ( _data = nil ) then Exit;
@@ -797,10 +810,10 @@ begin
 end;
 
 procedure TfrmGamelistDetails.vstOrphansPaintText( Sender: TBaseVirtualTree;
-                                                    const TargetCanvas: TCanvas;
-                                                    Node: PVirtualNode;
-                                                    Column: TColumnIndex;
-                                                    TextType: TVSTTextType );
+                                                   const TargetCanvas: TCanvas;
+                                                   Node: PVirtualNode;
+                                                   Column: TColumnIndex;
+                                                   TextType: TVSTTextType );
 begin
    var _data:= PGamelistNodeData( Sender.GetNodeData( Node ) );
    if ( _data = nil ) then Exit;
@@ -811,7 +824,7 @@ begin
 end;
 
 procedure TfrmGamelistDetails.vstOrphansFreeNode( Sender: TBaseVirtualTree;
-                                                   Node: PVirtualNode );
+                                                  Node: PVirtualNode );
 begin
    var _data:= PGamelistNodeData( Sender.GetNodeData( Node ) );
    if ( _data <> nil ) then
@@ -841,7 +854,7 @@ begin
                         _groupNode:= vstNoMedia.AddChild( nil );
                         var _groupData:= PGamelistNodeData( vstNoMedia.GetNodeData( _groupNode ) );
                         _groupData.isGroup:= True;
-                        _groupData.groupText:= _r.systemName;
+                        _groupData.groupText:= getFullNameFromShortName( _r.systemName );
                         _groupData.ref:= nil;
                         vstNoMedia.Expanded[_groupNode]:= True;
                         _groups.Add( _r.systemName, _groupNode );
@@ -866,10 +879,10 @@ begin
 end;
 
 procedure TfrmGamelistDetails.vstNoMediaGetText( Sender: TBaseVirtualTree;
-                                                  Node: PVirtualNode;
-                                                  Column: TColumnIndex;
-                                                  TextType: TVSTTextType;
-                                                  var CellText: string );
+                                                 Node: PVirtualNode;
+                                                 Column: TColumnIndex;
+                                                 TextType: TVSTTextType;
+                                                 var CellText: string );
 begin
    var _data:= PGamelistNodeData( Sender.GetNodeData( Node ) );
    if ( _data = nil ) then Exit;
@@ -886,10 +899,10 @@ begin
 end;
 
 procedure TfrmGamelistDetails.vstNoMediaPaintText( Sender: TBaseVirtualTree;
-                                                    const TargetCanvas: TCanvas;
-                                                    Node: PVirtualNode;
-                                                    Column: TColumnIndex;
-                                                    TextType: TVSTTextType );
+                                                   const TargetCanvas: TCanvas;
+                                                   Node: PVirtualNode;
+                                                   Column: TColumnIndex;
+                                                   TextType: TVSTTextType );
 begin
    var _data:= PGamelistNodeData( Sender.GetNodeData( Node ) );
    if ( _data = nil ) then Exit;
@@ -900,7 +913,7 @@ begin
 end;
 
 procedure TfrmGamelistDetails.vstNoMediaFreeNode( Sender: TBaseVirtualTree;
-                                                   Node: PVirtualNode );
+                                                  Node: PVirtualNode );
 begin
    var _data:= PGamelistNodeData( Sender.GetNodeData( Node ) );
    if ( _data <> nil ) then
@@ -983,9 +996,10 @@ begin
             // Update FResults
             var _list:= TList<string>.Create;
             try
-               for var s in _ref.gamelistResult.missingMedias do
+               for var s in _ref.gamelistResult.missingMedias do begin
                   if ( s <> _ref.mediaPath ) then
                      _list.Add( s );
+               end;
                _ref.gamelistResult.missingMedias:= _list.ToArray;
             finally
                _list.Free;
@@ -993,7 +1007,7 @@ begin
             vstMissingMedias.DeleteNode( _node );
             var _count:= 0;
             var _n:= vstMissingMedias.GetFirst;
-            while _n <> nil do begin
+            while ( _n <> nil ) do begin
                var _d:= PGamelistNodeData( vstMissingMedias.GetNodeData( _n ) );
                if ( _d <> nil ) and ( not _d.isGroup ) then Inc( _count );
                _n:= vstMissingMedias.GetNext( _n );
@@ -1041,18 +1055,20 @@ begin
                // Update FResults
                var _gamesList:= TList<TGameEntry>.Create;
                try
-                  for var _g in _ref.gamelistResult.games do
+                  for var _g in _ref.gamelistResult.games do begin
                      if ( _g.romPath <> _ref.romPath ) then
                         _gamesList.Add( _g );
+                  end;
                   _ref.gamelistResult.games:= _gamesList.ToArray;
                finally
                   _gamesList.Free;
                end;
                var _missingList:= TList<string>.Create;
                try
-                  for var _s in _ref.gamelistResult.missingROMs do
+                  for var _s in _ref.gamelistResult.missingROMs do begin
                      if ( _s <> _ref.romPath ) then
                         _missingList.Add( _s );
+                  end;
                   _ref.gamelistResult.missingROMs:= _missingList.ToArray;
                finally
                   _missingList.Free;
@@ -1064,10 +1080,12 @@ begin
                   var _romName:= TPath.GetFileNameWithoutExtension( _ref.romPath );
                   for var _subDir in [cstImages, cstVideos, cstManuals] do begin
                      var _path:= TPath.Combine( _ref.gamelistResult.romDir, _subDir );
-                     if ( TDirectory.Exists( _path ) ) then
-                        for var _f in TDirectory.GetFiles( _path ) do
+                     if ( TDirectory.Exists( _path ) ) then begin
+                        for var _f in TDirectory.GetFiles( _path ) do begin
                            if ( TPath.GetFileName( _f ).StartsWith( _romName ) ) then
                               TFile.Delete( _f );
+                        end;
+                     end;
                   end;
                end;
             end;
@@ -1111,9 +1129,10 @@ begin
                TFile.Delete( _ref.mediaPath );
                var _list:= TList<string>.Create;
                try
-                  for var s in _ref.gamelistResult.orphanMedias do
+                  for var s in _ref.gamelistResult.orphanMedias do begin
                      if ( s <> _ref.mediaPath ) then
                         _list.Add( s );
+                  end;
                   _ref.gamelistResult.orphanMedias:= _list.ToArray;
                finally
                   _list.Free;
@@ -1141,7 +1160,7 @@ end;
 
 procedure TfrmGamelistDetails.mniOpenFolderClick( Sender: TObject );
 begin
-   var _vst:= pgcMain.ActivePage.Controls[0] as TVirtualStringTree;
+   var _vst:= ( pgcMain.ActivePage.Controls[0] as TVirtualStringTree );
    var _node:= _vst.GetFirstSelected;
    if ( _node = nil ) then Exit;
 
@@ -1383,9 +1402,10 @@ begin
 
                      var _unscrapedList:= TList<string>.Create;
                      try
-                        for var _s in _ref.gamelistResult.unscrapedROMs do
+                        for var _s in _ref.gamelistResult.unscrapedROMs do begin
                            if ( _s <> _romPath ) then
                               _unscrapedList.Add( _s );
+                        end;
                         _ref.gamelistResult.unscrapedROMs:= _unscrapedList.ToArray;
                      finally
                         _unscrapedList.Free;
@@ -1690,12 +1710,14 @@ begin
    var _hasHashes:= False;
    if ( cbxSystems.ItemIndex > 0 ) then begin
       var _filtered:= getFilteredResults;
-      for var _r in _filtered do
-         for var _g in _r.games do
+      for var _r in _filtered do begin
+         for var _g in _r.games do begin
             if ( not _g.md5.IsEmpty ) or ( not _g.crc32.IsEmpty ) then begin
                _hasHashes:= True;
                Break;
             end;
+         end;
+      end;
    end;
    btnVerifyHashes.Visible:= _hasHashes;
    if ( btnVerifyHashes.Visible ) then
@@ -1743,9 +1765,10 @@ begin
    for var _r in aResults do begin
       Inc( _games, Length( _r.games ) );
       Inc( _romsOnDisk, _r.totalRoms );
-      for var _g in _r.games do
+      for var _g in _r.games do begin
          if _g.isScraped then
             Inc( _scraped );
+      end;
    end;
    lblStats.Caption:= Format( rstSystemStats,
                               [_games, _scraped, _romsOnDisk] );

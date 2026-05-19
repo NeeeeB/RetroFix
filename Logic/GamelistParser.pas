@@ -15,6 +15,8 @@ function addGameToGamelist( const aRomDir: string;
 function removeGameFromGamelist( const aRomDir: string;
                                  const aRomPath: string ): Boolean;
 
+function getFullNameFromShortName( const aShortName: string ): string;
+
 implementation
 
 uses
@@ -245,6 +247,15 @@ begin
 
    if ( Result ) then
       _doc.Save( _gamelistPath );
+end;
+
+function getFullNameFromShortName( const aShortName: string ): string;
+begin
+   Result:= aShortName.ToUpper;
+   for var _rec in cstShortToFullSystemName do begin
+      if ( _rec.shortName = aShortName ) then
+         Exit( _rec.fullName );
+   end;
 end;
 
 end.
