@@ -4,34 +4,64 @@ interface
 
 uses
    System.SysUtils, System.Classes, System.Threading,
+   System.Generics.Collections, System.Math,
+   System.JSON, System.Types, System.UITypes,
+   Winapi.Windows,
    Vcl.Controls, Vcl.Forms, Vcl.StdCtrls, Vcl.ExtCtrls,
-   Vcl.Graphics, Vcl.Imaging.PngImage, Vcl.Imaging.Jpeg, Vcl.Skia,
+   Vcl.Graphics, Vcl.Grids, Vcl.Skia,
+   System.Skia,
    Types, ESApi;
 
+const
+   cstTileWidth  = 150;
+   cstTileHeight = 120;
+   cstLabelHeight= 20;
+
 type
+   TCachedImage = class
+   public
+      svg          : TSkSvg;
+      skImage      : ISkImage;
+      isSvg        : Boolean;
+      viewBoxWidth : Single;
+      viewBoxHeight: Single;
+      destructor Destroy; override;
+   end;
+
    TfrmRetrobatBrowser = class( TForm )
-      pnlTop: TPanel;
+      pnlTop       : TPanel;
       lblBreadcrumb: TLabel;
-      btnBack: TButton;
-      scrBox: TScrollBox;
-      flowPanel: TFlowPanel;
+      btnBack      : TButton;
+      drawGrid     : TDrawGrid;
       procedure btnBackClick( Sender: TObject );
       procedure FormCreate( Sender: TObject );
+      procedure FormDestroy( Sender: TObject );
+      procedure drawGridDrawCell( Sender: TObject; ACol, ARow: Longint;
+                                   Rect: TRect; State: TGridDrawState );
+      procedure drawGridSelectCell( Sender: TObject; ACol, ARow: Longint;
+                                     var CanSelect: Boolean );
+      procedure drawGridMouseWheelDown( Sender: TObject; Shift: TShiftState;
+                                         MousePos: TPoint; var Handled: Boolean );
+      procedure drawGridMouseWheelUp( Sender: TObject; Shift: TShiftState;
+                                       MousePos: TPoint; var Handled: Boolean );
+      procedure FormResize( Sender: TObject );
    private
-      FSettings: TSettings;
+      FSettings     : TSettings;
       FCurrentSystem: string;
+      FItems        : TJSONArray;
+      FImageCache   : TObjectDictionary<string, TCachedImage>;
+      FLoadingKeys  : TDictionary<string, Boolean>;
+      FBufferBitmap : TBitmap;
+      procedure updateGrid;
       procedure loadSystems;
       procedure loadGames( const aSystemName: string );
-      procedure clearFlow;
-      procedure tileClick( Sender: TObject );
-      function createTile( const aCaption: string;
-                           const aSystemName: string;
-                           const aGameId: string = '' ): TSystemTile;
-      procedure loadSystemLogo( aTile: TSystemTile;
-                                const aSystemName: string );
-      procedure loadGameThumbnail( aTile: TSystemTile;
-                                   const aSystemName: string;
-                                   const aGameId: string );
+      procedure clearAll;
+      procedure loadImage( const aKey: string;
+                            const aSystemName: string;
+                            const aGameId: string;
+                            aIsSystem: Boolean );
+      function getItemIndex( aCol, aRow: Integer ): Integer;
+      function getItemKey( aIndex: Integer ): string;
    public
       procedure init( aSettings: TSettings );
    end;
@@ -39,15 +69,44 @@ type
 implementation
 
 uses
-   System.JSON,
-   System.Generics.Collections,
+   System.StrUtils,
    Constantes;
 
 {$R *.dfm}
 
+destructor TCachedImage.Destroy;
+begin
+   svg.Free;
+   inherited;
+end;
+
 procedure TfrmRetrobatBrowser.FormCreate( Sender: TObject );
 begin
-   // Nothing yet
+   FImageCache  := TObjectDictionary<string, TCachedImage>.Create( [doOwnsValues] );
+   FLoadingKeys := TDictionary<string, Boolean>.Create;
+   FBufferBitmap:= TBitmap.Create;
+   FBufferBitmap.PixelFormat:= pf32bit;
+
+   drawGrid.DefaultColWidth := cstTileWidth;
+   drawGrid.DefaultRowHeight:= cstTileHeight;
+   drawGrid.FixedCols       := 0;
+   drawGrid.FixedRows       := 0;
+   drawGrid.Options         := [goDrawFocusSelected];
+   drawGrid.ScrollBars      := ssVertical;
+   drawGrid.Color           := $00302020;
+end;
+
+procedure TfrmRetrobatBrowser.FormDestroy( Sender: TObject );
+begin
+   FreeAndNil( FItems );
+   FImageCache.Free;
+   FLoadingKeys.Free;
+   FBufferBitmap.Free;
+end;
+
+procedure TfrmRetrobatBrowser.FormResize( Sender: TObject );
+begin
+   updateGrid;
 end;
 
 procedure TfrmRetrobatBrowser.init( aSettings: TSettings );
@@ -56,226 +115,271 @@ begin
    loadSystems;
 end;
 
-procedure TfrmRetrobatBrowser.clearFlow;
+procedure TfrmRetrobatBrowser.clearAll;
 begin
-   flowPanel.DisableAlign;
-   try
-      while ( flowPanel.ControlCount > 0 ) do
-         flowPanel.Controls[0].Free;
-   finally
-      flowPanel.EnableAlign;
+   FreeAndNil( FItems );
+   if Assigned( FImageCache ) then FImageCache.Clear;
+   if Assigned( FLoadingKeys ) then FLoadingKeys.Clear;
+   drawGrid.RowCount:= 1;
+   drawGrid.ColCount:= 1;
+end;
+
+procedure TfrmRetrobatBrowser.updateGrid;
+begin
+   if ( FItems = nil ) or ( FItems.Count = 0 ) then begin
+      drawGrid.ColCount:= 1;
+      drawGrid.RowCount:= 1;
+      Exit;
    end;
+   var _cols:= Max( 1, drawGrid.ClientWidth div ( cstTileWidth + 1 ) );
+   var _rows:= ( FItems.Count + _cols - 1 ) div _cols;
+   drawGrid.ColCount:= _cols;
+   drawGrid.RowCount:= Max( 1, _rows );
+   drawGrid.Invalidate;
 end;
 
-function TfrmRetrobatBrowser.createTile( const aCaption: string;
-                                         const aSystemName: string;
-                                         const aGameId: string ): TSystemTile;
+function TfrmRetrobatBrowser.getItemIndex( aCol, aRow: Integer ): Integer;
 begin
-   Result:= TSystemTile.Create( flowPanel );
-   Result.Parent:= flowPanel;
-   Result.Width:= 150;
-   Result.Height:= 120;
-   Result.Margins.SetBounds( 10, 10, 10, 10 );
-   Result.AlignWithMargins:= True;
-   Result.BevelOuter:= bvNone;
-   Result.Caption:= '';
-   Result.systemName:= aSystemName;
-   Result.gameId:= aGameId;
-   Result.Cursor:= crHandPoint;
-   Result.OnClick:= tileClick;
-
-   var _svg:= TSkSvg.Create( Result );
-   _svg.Parent:= Result;
-   _svg.Align:= alClient;
-   _svg.Visible:= False;
-   _svg.OnClick:= tileClick;
-
-   var _img:= TSkAnimatedImage.Create( Result );
-   _img.Parent:= Result;
-   _img.Align:= alClient;
-   _img.Visible:= False;
-   _img.OnClick:= tileClick;
-
-   var _lbl:= TLabel.Create( Result );
-   _lbl.Parent:= Result;
-   _lbl.Align:= alBottom;
-   _lbl.Alignment:= taCenter;
-   _lbl.Caption:= aCaption;
-   _lbl.Height:= 20;
-   _lbl.WordWrap:= False;
-   _lbl.OnClick:= tileClick;
-   _lbl.EllipsisPosition:= epEndEllipsis;
-   _lbl.AutoSize:= False;
-   _lbl.Width:= Result.Width;
+   Result:= aRow * drawGrid.ColCount + aCol;
 end;
 
-procedure TfrmRetrobatBrowser.tileClick( Sender: TObject );
+function TfrmRetrobatBrowser.getItemKey( aIndex: Integer ): string;
 begin
-   var _ctrl:= TControl( Sender );
-   // Walk up to find the TSystemTile
-   while ( _ctrl <> nil ) and ( not ( _ctrl is TSystemTile ) ) do
-      _ctrl:= _ctrl.Parent;
-   if ( _ctrl = nil ) then Exit;
-
-   var _tile:= TSystemTile( _ctrl );
-   if ( FCurrentSystem.IsEmpty ) then
-      loadGames( _tile.systemName );
-   // TODO: launch game when in system view
+   if ( FItems = nil ) or ( aIndex >= FItems.Count ) then Exit( '' );
+   var _item:= FItems.Items[aIndex] as TJSONObject;
+   var _id  := _item.GetValue<string>( 'id', '' );
+   var _name:= _item.GetValue<string>( 'name', '' );
+   Result:= IfThen( not _id.IsEmpty, _id, _name );
 end;
 
-procedure TfrmRetrobatBrowser.loadSystemLogo( aTile: TSystemTile;
-                                               const aSystemName: string );
+procedure TfrmRetrobatBrowser.drawGridDrawCell( Sender: TObject;
+                                                 ACol, ARow: Longint;
+                                                 Rect: TRect;
+                                                 State: TGridDrawState );
 begin
-   TTask.Run( procedure
-   begin
-      var _bytes: TBytes;
-      var _err: string;
-      if ( not TESApi.getSystemLogo( FSettings, aSystemName, _bytes, _err ) ) then
-         Exit;
-      TThread.Queue( nil, procedure
+   var _idx:= getItemIndex( ACol, ARow );
+   if ( FItems = nil ) or ( _idx < 0 ) or ( _idx >= FItems.Count ) then begin
+      drawGrid.Canvas.Brush.Color:= drawGrid.Color;
+      drawGrid.Canvas.FillRect( Rect );
+      Exit;
+   end;
+
+   var _item:= FItems.Items[_idx] as TJSONObject;
+   var _name:= _item.GetValue<string>( 'name', '' );
+   var _id  := _item.GetValue<string>( 'id', '' );
+   var _key := getItemKey( _idx );
+
+   // Background
+   drawGrid.Canvas.Brush.Color:= IfThen( gdSelected in State, $00504040, $00302020 );
+   drawGrid.Canvas.FillRect( Rect );
+
+   // Image zone
+   var _imgH        := Rect.Height - cstLabelHeight;
+   var _cachedImage : TCachedImage:= nil;
+   FImageCache.TryGetValue( _key, _cachedImage );
+
+   if ( _cachedImage <> nil ) then begin
+      FBufferBitmap.SetSize( Rect.Width, _imgH );
+      FBufferBitmap.SkiaDraw( procedure( const ACanvas: ISkCanvas )
       begin
-         if ( not Assigned( aTile ) ) or
-            ( not Assigned( aTile.Parent ) ) then Exit;
-         try
-            if ( _bytes[0] = Ord( '<' ) ) then begin
-               // SVG
-               var _svg: TSkSvg:= nil;
-               for var ii:= 0 to Pred( aTile.ControlCount ) do begin
-                  if ( aTile.Controls[ii] is TSkSvg ) then begin
-                     _svg:= ( aTile.Controls[ii] as TSkSvg );
-                     Break;
-                  end;
-               end;
-               if ( _svg <> nil ) then begin
-                  _svg.Svg.Source:= TEncoding.UTF8.GetString( _bytes );
-                  _svg.Visible:= True;
-               end;
+         ACanvas.Clear( TAlphaColors.Null );
+         var _destRect:= TRectF.Create( 5, 5, Rect.Width - 5, _imgH - 5 );
+
+         if ( _cachedImage.isSvg ) and ( _cachedImage.svg <> nil ) then begin
+            var _vbW:= _cachedImage.viewBoxWidth;
+            var _vbH:= _cachedImage.viewBoxHeight;
+            if ( _vbW > 0 ) and ( _vbH > 0 ) then begin
+               var _scale:= Min( _destRect.Width / _vbW, _destRect.Height / _vbH );
+               var _dx   := _destRect.Left + ( _destRect.Width - _vbW * _scale ) / 2;
+               var _dy   := _destRect.Top + ( _destRect.Height - _vbH * _scale ) / 2;
+               ACanvas.Save;
+               ACanvas.Translate( _dx, _dy );
+               ACanvas.Scale( _scale, _scale );
+               _cachedImage.svg.Svg.DOM.Render( ACanvas );
+               ACanvas.Restore;
             end else begin
-               // PNG/JPEG
-               var _img: TSkAnimatedImage:= nil;
-               for var ii:= 0 to Pred( aTile.ControlCount ) do begin
-                  if ( aTile.Controls[ii] is TSkAnimatedImage ) then begin
-                     _img:= ( aTile.Controls[ii] as TSkAnimatedImage );
-                     Break;
-                  end;
-               end;
-               if ( _img <> nil ) then begin
-                  _img.Source.Data:= _bytes;
-                  _img.Visible:= True;
-               end;
+               _cachedImage.svg.Svg.DOM.SetContainerSize(
+                  TSizeF.Create( _destRect.Width, _destRect.Height ) );
+               ACanvas.Save;
+               ACanvas.Translate( _destRect.Left, _destRect.Top );
+               _cachedImage.svg.Svg.DOM.Render( ACanvas );
+               ACanvas.Restore;
             end;
-         except
+         end else if ( _cachedImage.skImage <> nil ) then begin
+            var _iw   := _cachedImage.skImage.Width;
+            var _ih   := _cachedImage.skImage.Height;
+            var _scale:= Min( _destRect.Width / _iw, _destRect.Height / _ih );
+            var _dw   := _iw * _scale;
+            var _dh   := _ih * _scale;
+            var _dx   := _destRect.Left + ( _destRect.Width - _dw ) / 2;
+            var _dy   := _destRect.Top + ( _destRect.Height - _dh ) / 2;
+            ACanvas.DrawImageRect( _cachedImage.skImage,
+                                   TRectF.Create( _dx, _dy, _dx + _dw, _dy + _dh ),
+                                   TSkSamplingOptions.Create( TSkFilterMode.Linear,
+                                                               TSkMipmapMode.Linear ) );
          end;
       end );
-   end );
+
+      var _rgn:= CreateRectRgn( Rect.Left, Rect.Top, Rect.Right, Rect.Bottom - cstLabelHeight );
+      SelectClipRgn( drawGrid.Canvas.Handle, _rgn );
+      drawGrid.Canvas.Draw( Rect.Left, Rect.Top, FBufferBitmap );
+      SelectClipRgn( drawGrid.Canvas.Handle, 0 );
+      DeleteObject( _rgn );
+   end else begin
+      if ( not FLoadingKeys.ContainsKey( _key ) ) then begin
+         FLoadingKeys.Add( _key, True );
+         var _sysName:= IfThen( FCurrentSystem.IsEmpty,
+                                 _item.GetValue<string>( 'name', '' ),
+                                 FCurrentSystem );
+         loadImage( _key, _sysName, _id, FCurrentSystem.IsEmpty );
+      end;
+   end;
+
+   // Label
+   var _lblRect       := Rect;
+   _lblRect.Top       := _lblRect.Bottom - cstLabelHeight;
+   drawGrid.Canvas.Brush.Color:= clBlack;
+   drawGrid.Canvas.FillRect( _lblRect );
+   drawGrid.Canvas.Font.Color := clWhite;
+   drawGrid.Canvas.Font.Size  := 8;
+   DrawText( drawGrid.Canvas.Handle, PChar( _name ), -1, _lblRect,
+             DT_CENTER or DT_VCENTER or DT_SINGLELINE or DT_END_ELLIPSIS );
 end;
 
-procedure TfrmRetrobatBrowser.loadGameThumbnail( aTile: TSystemTile;
-                                                  const aSystemName: string;
-                                                  const aGameId: string );
+procedure TfrmRetrobatBrowser.drawGridSelectCell( Sender: TObject;
+                                                   ACol, ARow: Longint;
+                                                   var CanSelect: Boolean );
 begin
+   var _idx:= getItemIndex( ACol, ARow );
+   if ( FItems = nil ) or ( _idx >= FItems.Count ) then begin
+      CanSelect:= False;
+      Exit;
+   end;
+   CanSelect:= True;
+   var _item:= FItems.Items[_idx] as TJSONObject;
+   if ( FCurrentSystem.IsEmpty ) then begin
+      var _name:= _item.GetValue<string>( 'name', '' );
+      loadGames( _name );
+   end;
+   // TODO: launch game
+end;
+
+procedure TfrmRetrobatBrowser.drawGridMouseWheelDown( Sender: TObject;
+                                                       Shift: TShiftState;
+                                                       MousePos: TPoint;
+                                                       var Handled: Boolean );
+begin
+   drawGrid.TopRow:= Min( drawGrid.RowCount - 1, drawGrid.TopRow + 3 );
+   Handled:= True;
+end;
+
+procedure TfrmRetrobatBrowser.drawGridMouseWheelUp( Sender: TObject;
+                                                     Shift: TShiftState;
+                                                     MousePos: TPoint;
+                                                     var Handled: Boolean );
+begin
+   drawGrid.TopRow:= Max( 0, drawGrid.TopRow - 3 );
+   Handled:= True;
+end;
+
+procedure TfrmRetrobatBrowser.loadImage( const aKey: string;
+                                          const aSystemName: string;
+                                          const aGameId: string;
+                                          aIsSystem: Boolean );
+begin
+   var _key       := aKey;
+   var _systemName:= aSystemName;
+   var _gameId    := aGameId;
+
    TTask.Run( procedure
    begin
       var _bytes: TBytes;
-      var _err: string;
-      if ( not TESApi.getGameMedia( FSettings, aSystemName, aGameId,
-                                    'thumbnail', _bytes, _err ) ) then
-         Exit;
+      var _err  : string;
+
+      if aIsSystem then
+         TESApi.getSystemLogo( FSettings, _systemName, _bytes, _err )
+      else
+         TESApi.getGameMedia( FSettings, _systemName, _gameId,
+                               'thumbnail', _bytes, _err );
+
       if ( Length( _bytes ) = 0 ) then Exit;
-      TThread.Queue( nil, procedure
-      begin
-         if ( not Assigned( aTile ) ) or
-            ( not Assigned( aTile.Parent ) ) then Exit;
-         try
-            // PNG/JPEG only for game thumbnails, no SVG scrape
-            var _img: TSkAnimatedImage:= nil;
-            for var ii:= 0 to Pred( aTile.ControlCount ) do  begin
-               if ( aTile.Controls[ii] is TSkAnimatedImage ) then begin
-                  _img:= ( aTile.Controls[ii] as TSkAnimatedImage );
-                  Break;
+
+      var _cached:= TCachedImage.Create;
+      if ( _bytes[0] = Ord( '<' ) ) then begin
+         _cached.isSvg:= True;
+         _cached.svg  := TSkSvg.Create( nil );
+         _cached.svg.Svg.Source:= TEncoding.UTF8.GetString( _bytes );
+         _cached.viewBoxWidth := _cached.svg.Svg.OriginalSize.Width;
+         _cached.viewBoxHeight:= _cached.svg.Svg.OriginalSize.Height;
+         if ( _cached.viewBoxWidth = 0 ) then begin
+            var _src   := string( _cached.svg.Svg.Source );
+            var _p     := Pos( 'viewBox=', _src );
+            if ( _p > 0 ) then begin
+               var _vb   := _src.Substring( _p + 8 ).TrimLeft( ['"', ' '] );
+               var _parts:= _vb.Split( [' ', ','] );
+               if ( Length( _parts ) >= 4 ) then begin
+                  TryStrToFloat( _parts[2].Replace( '.', FormatSettings.DecimalSeparator ),
+                                 _cached.viewBoxWidth );
+                  TryStrToFloat( _parts[3].Replace( '.', FormatSettings.DecimalSeparator ),
+                                 _cached.viewBoxHeight );
                end;
             end;
-            if ( _img <> nil ) then begin
-               _img.Source.Data:= _bytes;
-               _img.Visible:= True;
-            end;
-         except
          end;
+      end else begin
+         _cached.isSvg  := False;
+         _cached.skImage:= TSkImage.MakeFromEncoded( _bytes );
+      end;
+
+      TThread.Queue( nil, procedure
+      begin
+         if Assigned( FImageCache ) then begin
+            FImageCache.AddOrSetValue( _key, _cached );
+            drawGrid.Invalidate;
+         end else
+            _cached.Free;
       end );
    end );
 end;
 
 procedure TfrmRetrobatBrowser.loadSystems;
 begin
-   clearFlow;
+   clearAll;
+   btnBack.Visible      := False;
    lblBreadcrumb.Caption:= 'Systems';
-   btnBack.Visible:= False;
-   FCurrentSystem:= '';
+   FCurrentSystem       := '';
 
    TTask.Run( procedure
    begin
       var _response, _err: string;
       if ( not TESApi.getSystemList( FSettings, _response, _err ) ) then Exit;
-
       var _json:= TJSONObject.ParseJSONValue( _response ) as TJSONArray;
       if ( _json = nil ) then Exit;
       TThread.Queue( nil, procedure
       begin
-         try
-            flowPanel.DisableAlign;
-            try
-               for var ii:= 0 to Pred( _json.Count ) do begin
-                  var _sys:= _json.Items[ii] as TJSONObject;
-                  var _name:= _sys.GetValue<string>( 'name', '' );
-                  var _fullname:= _sys.GetValue<string>( 'fullname', _name );
-                  if ( _name.IsEmpty ) then Continue;
-                  var _tile:= createTile( _fullname, _name );
-                  loadSystemLogo( _tile, _name );
-               end;
-            finally
-               flowPanel.EnableAlign;
-            end;
-         finally
-            _json.Free;
-         end;
+         FItems:= _json;
+         updateGrid;
       end );
    end );
 end;
 
 procedure TfrmRetrobatBrowser.loadGames( const aSystemName: string );
 begin
-   clearFlow;
-   FCurrentSystem:= aSystemName;
+   clearAll;
+   FCurrentSystem       := aSystemName;
+   btnBack.Visible      := True;
    lblBreadcrumb.Caption:= 'Systems > ' + aSystemName;
-   btnBack.Visible:= True;
 
    TTask.Run( procedure
    begin
       var _response, _err: string;
       if ( not TESApi.getSystemGames( FSettings, aSystemName,
                                       _response, _err ) ) then Exit;
-
       var _json:= TJSONObject.ParseJSONValue( _response ) as TJSONArray;
       if ( _json = nil ) then Exit;
       TThread.Queue( nil, procedure
       begin
-         try
-            flowPanel.DisableAlign;
-            try
-               for var ii:= 0 to Pred( _json.Count ) do begin
-                  var _game:= _json.Items[ii] as TJSONObject;
-                  var _name:= _game.GetValue<string>( 'name', '' );
-                  var _id:= _game.GetValue<string>( 'id', '' );
-                  if ( _name.IsEmpty ) then Continue;
-                  var _tile:= createTile( _name, aSystemName, _id );
-                  loadGameThumbnail( _tile, aSystemName, _id );
-               end;
-            finally
-               flowPanel.EnableAlign;
-            end;
-         finally
-            _json.Free;
-         end;
+         FItems:= _json;
+         updateGrid;
       end );
    end );
 end;

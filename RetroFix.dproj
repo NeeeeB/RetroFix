@@ -136,21 +136,20 @@
         <DelphiCompile Include="$(MainSource)">
             <MainSource>MainSource</MainSource>
         </DelphiCompile>
+        <RcCompile Include="resources.rc">
+            <Form>resources.res</Form>
+        </RcCompile>
         <DCCReference Include="Forms\BiosDetails.pas">
             <Form>frmBiosDetails</Form>
-            <FormType>dfm</FormType>
         </DCCReference>
         <DCCReference Include="Forms\GamelistDetails.pas">
             <Form>frmGamelistDetails</Form>
-            <FormType>dfm</FormType>
         </DCCReference>
         <DCCReference Include="Forms\Main.pas">
             <Form>frmMain</Form>
-            <FormType>dfm</FormType>
         </DCCReference>
         <DCCReference Include="Forms\Settings.pas">
             <Form>frmSettings</Form>
-            <FormType>dfm</FormType>
         </DCCReference>
         <DCCReference Include="Logic\BiosChecker.pas"/>
         <DCCReference Include="Logic\BiosExport.pas"/>
@@ -166,12 +165,10 @@
         <DCCReference Include="Shared\Types.pas"/>
         <DCCReference Include="Forms\ConfirmDelete.pas">
             <Form>Form1</Form>
-            <FormType>dfm</FormType>
         </DCCReference>
         <DCCReference Include="Network\ESApi.pas"/>
         <DCCReference Include="Forms\RetrobatBrowser.pas">
             <Form>Form2</Form>
-            <FormType>dfm</FormType>
         </DCCReference>
         <DCCReference Include="Logic\EsSystemsReader.pas"/>
         <BuildConfiguration Include="Base">

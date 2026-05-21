@@ -4,7 +4,7 @@ object frmMain: TfrmMain
   BorderIcons = [biSystemMenu, biMinimize]
   BorderStyle = bsSingle
   Caption = 'Retrofix - Fix your game collection'
-  ClientHeight = 386
+  ClientHeight = 380
   ClientWidth = 545
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -21,20 +21,22 @@ object frmMain: TfrmMain
     Left = 0
     Top = 53
     Width = 545
-    Height = 303
+    Height = 297
     Align = alClient
     BevelOuter = bvNone
     TabOrder = 0
+    ExplicitHeight = 303
     object gbxActions: TGroupBox
       AlignWithMargins = True
       Left = 3
       Top = 3
       Width = 539
-      Height = 297
+      Height = 291
       Align = alClient
       Caption = 'Actions'
       Enabled = False
       TabOrder = 0
+      ExplicitHeight = 297
       object gbxBios: TGroupBox
         AlignWithMargins = True
         Left = 5
@@ -117,7 +119,7 @@ object frmMain: TfrmMain
         TabOrder = 1
         object lblGamelistScanResult: TLabel
           Left = 91
-          Top = 52
+          Top = 50
           Width = 422
           Height = 31
           AutoSize = False
@@ -134,7 +136,7 @@ object frmMain: TfrmMain
         end
         object btnScanGamelists: TButton
           Left = 10
-          Top = 24
+          Top = 22
           Width = 278
           Height = 25
           Caption = 'Scan Gamelists'
@@ -143,7 +145,7 @@ object frmMain: TfrmMain
         end
         object btnGamelistScanDetails: TButton
           Left = 10
-          Top = 55
+          Top = 53
           Width = 75
           Height = 25
           Caption = 'Details...'
@@ -157,11 +159,24 @@ object frmMain: TfrmMain
         Left = 5
         Top = 212
         Width = 529
-        Height = 70
+        Height = 61
         Align = alTop
         Caption = 'Retrobat Live'
         TabOrder = 2
-        Visible = False
+        object lblEsApiUnavailable: TLabel
+          Left = 10
+          Top = 29
+          Width = 198
+          Height = 15
+          Caption = 'Emulation Station API is unavailable...'
+          Font.Charset = DEFAULT_CHARSET
+          Font.Color = clGray
+          Font.Height = -12
+          Font.Name = 'Segoe UI'
+          Font.Style = []
+          ParentFont = False
+          StyleElements = [seClient, seBorder]
+        end
         object btnBrowse: TButton
           Left = 10
           Top = 25
@@ -169,6 +184,7 @@ object frmMain: TfrmMain
           Height = 25
           Caption = 'Browse...'
           TabOrder = 0
+          Visible = False
           OnClick = btnBrowseClick
         end
       end
@@ -232,13 +248,14 @@ object frmMain: TfrmMain
   end
   object pnlBottom: TPanel
     Left = 0
-    Top = 356
+    Top = 350
     Width = 545
     Height = 30
     Margins.Top = 0
     Align = alBottom
     BevelOuter = bvNone
     TabOrder = 2
+    ExplicitTop = 356
     object lblProgress: TLabel
       Left = 0
       Top = 8

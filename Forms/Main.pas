@@ -41,6 +41,7 @@ type
       lblGamelistScanResult: TLabel;
       gbxRetrobatLive: TGroupBox;
       btnBrowse: TButton;
+      lblEsApiUnavailable: TLabel;
       procedure FormCreate(Sender: TObject);
       procedure FormDestroy(Sender: TObject);
       procedure btnSelectFolderClick(Sender: TObject);
@@ -113,7 +114,6 @@ procedure TfrmMain.FormCreate(Sender: TObject);
 begin
    lblValidSelectedFolder.Caption:= cstValidFolderStrings[vfUndefined];
    lblValidSelectedFolder.Font.Color:= cstValidFolderColors[vfUndefined];
-   Height:= cstMainFormHeight;
    FSettings:= TSettings.Create;
    if ( tryAndLoadSettings ) then begin
       FLoading:= True;
@@ -129,7 +129,7 @@ begin
       end;
       readEsSettings( FSettings.retrobatPath, FSettings );
       FSystemExtensions:= readEsSystemsExtensions( FSettings.retrobatPath );
-      checkESAvailability;
+//      checkESAvailability;
    end;
 end;
 
@@ -197,7 +197,6 @@ end;
 
 procedure TfrmMain.checkESAvailability;
 begin
-   gbxRetrobatLive.Visible:= False;
    if ( not FSettings.apiEnabled ) then Exit;
 
    TTask.Run( procedure
@@ -206,11 +205,8 @@ begin
 
       TThread.Queue( nil, procedure
       begin
-         gbxRetrobatLive.Visible:= _available;
-         if ( _available ) then
-            Height:= cstMainFormHeight+gbxRetrobatLive.Height+(cstMargin*2)
-         else
-            Height:= cstMainFormHeight;
+         btnBrowse.Visible:= _available;
+         lblEsApiUnavailable.Visible:= ( not _available );
       end );
    end );
 end;
@@ -271,7 +267,7 @@ begin
       readEsSettings( FSettings.retrobatPath, FSettings );
       FSystemExtensions.Free;
       FSystemExtensions:= readEsSystemsExtensions( FSettings.retrobatPath );
-      checkESAvailability;
+//      checkESAvailability;
    end;
 end;
 

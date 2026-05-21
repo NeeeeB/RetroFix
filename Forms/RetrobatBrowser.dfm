@@ -11,6 +11,9 @@ object frmRetrobatBrowser: TfrmRetrobatBrowser
   Font.Name = 'Segoe UI'
   Font.Style = []
   Position = poOwnerFormCenter
+  OnCreate = FormCreate
+  OnDestroy = FormDestroy
+  OnResize = FormResize
   TextHeight = 15
   object pnlTop: TPanel
     Left = 0
@@ -44,22 +47,20 @@ object frmRetrobatBrowser: TfrmRetrobatBrowser
       OnClick = btnBackClick
     end
   end
-  object scrBox: TScrollBox
+  object drawGrid: TDrawGrid
     Left = 0
     Top = 35
     Width = 900
     Height = 565
     Align = alClient
-    BorderStyle = bsNone
     TabOrder = 1
-    object flowPanel: TFlowPanel
-      Left = 0
-      Top = 0
-      Width = 900
-      Height = 41
-      Align = alTop
-      AutoSize = True
-      TabOrder = 0
-    end
+    OnDrawCell = drawGridDrawCell
+    OnMouseWheelDown = drawGridMouseWheelDown
+    OnMouseWheelUp = drawGridMouseWheelUp
+    OnSelectCell = drawGridSelectCell
+    ExplicitLeft = 288
+    ExplicitTop = 224
+    ExplicitWidth = 320
+    ExplicitHeight = 120
   end
 end
