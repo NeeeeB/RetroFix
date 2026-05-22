@@ -9,7 +9,6 @@ uses
    Vcl.Forms, Vcl.Controls, Vcl.ExtCtrls, Vcl.StdCtrls,
    Vcl.Skia, Vcl.Graphics,
    System.Skia,
-   Neslib.Xml,
    ESApi, Constantes, Types;
 
 const
@@ -61,8 +60,6 @@ type
       procedure loadImage( const aKey, aSystem, aGameId: string;
                             aIsSystem: Boolean );
       function getItemKey( aIndex: Integer ): string;
-      procedure extractViewBox( const aSvg: string;
-                                 out aMinX, aMinY, aW, aH: Single );
       function getVisibleStartRow: Integer;
       function getVisibleEndRow: Integer;
       procedure drawTile( const ACanvas: ISkCanvas;
@@ -167,28 +164,6 @@ begin
    Result:= getVisibleStartRow + Trunc( SkPaintBox.Height / cstTileHeight ) + 2;
 end;
 
-procedure TfrmRetrobatBrowser.extractViewBox( const aSvg: string;
-                                               out aMinX, aMinY, aW, aH: Single );
-begin
-   aMinX:= 0; aMinY:= 0; aW:= 0; aH:= 0;
-   try
-      var _doc:= TXmlDocument.Create;
-      _doc.Load( aSvg );
-      var _root:= _doc.DocumentElement;
-      if _root.IsEmpty then Exit;
-      var _attr:= _root.AttributeByName( 'viewBox' );
-      if _attr.Name.IsEmpty then Exit;
-      var _parts:= string( _attr.Value ).Split( [' ', ','] );
-      if ( Length( _parts ) >= 4 ) then begin
-         TryStrToFloat( _parts[0].Replace( '.', FormatSettings.DecimalSeparator ), aMinX );
-         TryStrToFloat( _parts[1].Replace( '.', FormatSettings.DecimalSeparator ), aMinY );
-         TryStrToFloat( _parts[2].Replace( '.', FormatSettings.DecimalSeparator ), aW );
-         TryStrToFloat( _parts[3].Replace( '.', FormatSettings.DecimalSeparator ), aH );
-      end;
-   except
-   end;
-end;
-
 procedure TfrmRetrobatBrowser.loadImage( const aKey, aSystem, aGameId: string;
                                           aIsSystem: Boolean );
 begin
@@ -218,13 +193,35 @@ begin
       _cached.isSvg:= True;
       _cached.svg  := TSkSvg.Create( nil );
       _cached.svg.Svg.Source:= _txt;
-      _cached.viewBoxWidth := _cached.svg.Svg.OriginalSize.Width;
-      _cached.viewBoxHeight:= _cached.svg.Svg.OriginalSize.Height;
+
+      var _vbRect: TRectF;
+      var _hasVB := _cached.svg.Svg.DOM.Root.TryGetViewBox( _vbRect );
+      var _size  := _cached.svg.Svg.DOM.Root.GetIntrinsicSize( TSizeF.Create( 0, 0 ) );
+
       _cached.viewBoxMinX  := 0;
       _cached.viewBoxMinY  := 0;
-      if ( _cached.viewBoxWidth = 0 ) or ( _cached.viewBoxHeight = 0 ) then
-         extractViewBox( _txt, _cached.viewBoxMinX, _cached.viewBoxMinY,
-                         _cached.viewBoxWidth, _cached.viewBoxHeight );
+      _cached.viewBoxWidth := 0;
+      _cached.viewBoxHeight:= 0;
+
+      if _hasVB then begin
+         _cached.viewBoxMinX  := _vbRect.Left;
+         _cached.viewBoxMinY  := _vbRect.Top;
+         _cached.viewBoxWidth := _vbRect.Width;
+         _cached.viewBoxHeight:= _vbRect.Height;
+      end;
+
+      if _size.Width > 0 then
+         _cached.viewBoxWidth := _size.Width;
+      if _size.Height > 0 then
+         _cached.viewBoxHeight:= _size.Height;
+      if _cached.svg.Svg.DOM.Root.TryGetViewBox( _vbRect ) then begin
+         _cached.viewBoxMinX := _vbRect.Left;
+         _cached.viewBoxMinY := _vbRect.Top;
+      end;
+      if ( _cached.viewBoxWidth = 0 ) or ( _cached.viewBoxHeight = 0 ) then begin
+         _cached.viewBoxWidth := _vbRect.Width;
+         _cached.viewBoxHeight:= _vbRect.Height;
+      end;
    end else begin
       _cached.isSvg  := False;
       _cached.skImage:= TSkImage.MakeFromEncoded( _bytes );
