@@ -13,8 +13,19 @@ object frmRetrobatBrowser: TfrmRetrobatBrowser
   Position = poOwnerFormCenter
   OnCreate = FormCreate
   OnDestroy = FormDestroy
+  OnMouseWheel = FormMouseWheel
   OnResize = FormResize
+  OnShow = FormShow
   TextHeight = 15
+  object SkPaintBox: TSkPaintBox
+    Left = 0
+    Top = 35
+    Width = 900
+    Height = 565
+    Align = alClient
+    OnMouseDown = SkPaintBoxMouseDown
+    OnDraw = SkPaintBoxDraw
+  end
   object pnlTop: TPanel
     Left = 0
     Top = 0
@@ -44,23 +55,6 @@ object frmRetrobatBrowser: TfrmRetrobatBrowser
       Caption = '< Back'
       TabOrder = 0
       Visible = False
-      OnClick = btnBackClick
     end
-  end
-  object drawGrid: TDrawGrid
-    Left = 0
-    Top = 35
-    Width = 900
-    Height = 565
-    Align = alClient
-    TabOrder = 1
-    OnDrawCell = drawGridDrawCell
-    OnMouseWheelDown = drawGridMouseWheelDown
-    OnMouseWheelUp = drawGridMouseWheelUp
-    OnSelectCell = drawGridSelectCell
-    ExplicitLeft = 288
-    ExplicitTop = 224
-    ExplicitWidth = 320
-    ExplicitHeight = 120
   end
 end
