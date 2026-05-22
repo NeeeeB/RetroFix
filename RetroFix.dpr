@@ -3,6 +3,7 @@
 {$R 'resources.res' 'resources.rc'}
 
 uses
+  SkiaInit in 'Logic\SkiaInit.pas',
   System.SysUtils,
   System.Classes,
   System.IOUtils,
@@ -34,17 +35,6 @@ uses
 {$R *.res}
 
 begin
-  // Extract sk4d.dll if needed, before Skia loads
-   var _dllPath:= TPath.Combine( ExtractFilePath( ParamStr( 0 ) ), 'sk4d.dll' );
-   if ( not FileExists( _dllPath ) ) then begin
-      var _rs:= TResourceStream.Create( HInstance, 'SK4D', RT_RCDATA );
-      try
-         _rs.SaveToFile( _dllPath );
-      finally
-         _rs.Free;
-      end;
-   end;
-
   Application.Initialize;
   Application.MainFormOnTaskbar := True;
   Application.CreateForm(TfrmMain, frmMain);

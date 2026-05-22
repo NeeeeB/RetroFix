@@ -139,6 +139,7 @@
         <RcCompile Include="resources.rc">
             <Form>resources.res</Form>
         </RcCompile>
+        <DCCReference Include="Logic\SkiaInit.pas"/>
         <DCCReference Include="Forms\BiosDetails.pas">
             <Form>frmBiosDetails</Form>
         </DCCReference>
@@ -170,7 +171,9 @@
         <DCCReference Include="Forms\RetrobatBrowser.pas">
             <Form>Form2</Form>
         </DCCReference>
-        <DCCReference Include="Logic\EsSystemsReader.pas"/>
+        <DCCReference Include="Logic\EsSystemsReader.pas">
+            <Form>$R *.res</Form>
+        </DCCReference>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>
@@ -281,12 +284,6 @@
                 <DeployFile LocalName="Win64\Debug\RetroFix.exe" Configuration="Debug" Class="ProjectOutput">
                     <Platform Name="Win64">
                         <RemoteName>RetroFix.exe</RemoteName>
-                        <Overwrite>true</Overwrite>
-                    </Platform>
-                </DeployFile>
-                <DeployFile LocalName="Win64\Debug\RetroFix.rsm" Configuration="Debug" Class="DebugSymbols">
-                    <Platform Name="Win64">
-                        <RemoteName>RetroFix.rsm</RemoteName>
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>
