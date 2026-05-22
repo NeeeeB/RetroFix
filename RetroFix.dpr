@@ -32,7 +32,6 @@ uses
   EsSystemsReader in 'Logic\EsSystemsReader.pas';
 
 {$R *.res}
-{$R resources.res}
 
 begin
   // Extract sk4d.dll if needed, before Skia loads
