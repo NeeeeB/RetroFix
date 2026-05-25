@@ -77,6 +77,9 @@ const
    {$INCLUDE 'screenscraper_credentials.inc'}
 
    cstMargin = 5;
+   cstTileWidth = 150;
+   cstTileHeight = 120;
+   cstLabelHeight = 20;
 
    cstSettingsFileName       = 'config.json';
    cstRetrobatExeFilename    = 'retrobat.exe';

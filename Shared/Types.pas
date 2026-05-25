@@ -3,7 +3,9 @@
 interface
 
 uses
-   Vcl.ExtCtrls;
+   system.Skia,
+   Vcl.ExtCtrls,
+   Vcl.Skia;
 
 type
    TBiosStatus = (
@@ -254,6 +256,24 @@ type
       hashType    : string;
    end;
 
+   TCachedImage = class
+   public
+      svg          : TSkSvg;
+      skImage      : ISkImage;
+      isSvg        : Boolean;
+      viewBoxMinX  : Single;
+      viewBoxMinY  : Single;
+      viewBoxWidth : Single;
+      viewBoxHeight: Single;
+      destructor Destroy; override;
+   end;
+
 implementation
+
+destructor TCachedImage.Destroy;
+begin
+   svg.Free;
+   inherited;
+end;
 
 end.

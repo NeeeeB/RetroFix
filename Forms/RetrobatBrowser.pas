@@ -11,60 +11,42 @@ uses
    System.Skia,
    ESApi, Constantes, Types;
 
-const
-   cstTileWidth  = 150;
-   cstTileHeight = 120;
-   cstLabelHeight= 20;
-
 type
-   TCachedImage = class
-   public
-      svg          : TSkSvg;
-      skImage      : ISkImage;
-      isSvg        : Boolean;
-      viewBoxMinX  : Single;
-      viewBoxMinY  : Single;
-      viewBoxWidth : Single;
-      viewBoxHeight: Single;
-      destructor Destroy; override;
-   end;
-
    TfrmRetrobatBrowser = class( TForm )
-      SkPaintBox   : TSkPaintBox;
-      pnlTop       : TPanel;
+      SkPaintBox: TSkPaintBox;
+      pnlTop: TPanel;
       lblBreadcrumb: TLabel;
-      btnBack      : TButton;
+      btnBack: TButton;
       procedure FormCreate( Sender: TObject );
       procedure FormDestroy( Sender: TObject );
       procedure FormResize( Sender: TObject );
       procedure FormShow( Sender: TObject );
       procedure FormMouseWheel( Sender: TObject; Shift: TShiftState;
-                           WheelDelta: Integer; MousePos: TPoint;
-                           var Handled: Boolean );
+                                WheelDelta: Integer; MousePos: TPoint;
+                                var Handled: Boolean );
       procedure SkPaintBoxDraw( Sender: TObject; const ACanvas: ISkCanvas;
-                                 const ARect: TRectF; const AOpacity: Single );
+                                const ARect: TRectF; const AOpacity: Single );
       procedure SkPaintBoxMouseDown( Sender: TObject; Button: TMouseButton;
-                                      Shift: TShiftState; X, Y: Integer );
+                                     Shift: TShiftState; X, Y: Integer );
       procedure btnBackClick( Sender: TObject );
    private
-      FSettings     : TSettings;
-      FItems        : TJSONArray;
+      FSettings: TSettings;
+      FItems: TJSONArray;
       FCurrentSystem: string;
-      FImageCache   : TObjectDictionary<string, TCachedImage>;
-      FCols         : Integer;
-      FScrollY      : Single;
+      FImageCache: TObjectDictionary<string, TCachedImage>;
+      FCols: Integer;
+      FScrollY: Single;
       procedure initLayout;
       procedure clearAll;
       procedure loadSystems;
       procedure loadGames( const aSystem: string );
-      procedure loadImage( const aKey, aSystem, aGameId: string;
-                            aIsSystem: Boolean );
+      procedure loadImage( const aKey, aSystem, aGameId: string; aIsSystem: Boolean );
       function getItemKey( aIndex: Integer ): string;
       function getVisibleStartRow: Integer;
       function getVisibleEndRow: Integer;
       procedure drawTile( const ACanvas: ISkCanvas;
-                           const aTileRect, aImgRect, aLblRect: TRectF;
-                           const aName, aKey: string );
+                          const aTileRect, aImgRect, aLblRect: TRectF;
+                          const aName, aKey: string );
    public
       procedure init( aSettings: TSettings );
       procedure mouseWheel( aUp: Boolean );
@@ -76,12 +58,6 @@ uses
    System.StrUtils;
 
 {$R *.dfm}
-
-destructor TCachedImage.Destroy;
-begin
-   svg.Free;
-   inherited;
-end;
 
 procedure TfrmRetrobatBrowser.FormCreate( Sender: TObject );
 begin
@@ -107,10 +83,10 @@ begin
 end;
 
 procedure TfrmRetrobatBrowser.FormMouseWheel( Sender: TObject;
-                                               Shift: TShiftState;
-                                               WheelDelta: Integer;
-                                               MousePos: TPoint;
-                                               var Handled: Boolean );
+                                              Shift: TShiftState;
+                                              WheelDelta: Integer;
+                                              MousePos: TPoint;
+                                              var Handled: Boolean );
 begin
    FScrollY:= Max( 0, FScrollY - WheelDelta );
    SkPaintBox.Invalidate;
@@ -124,7 +100,7 @@ end;
 
 procedure TfrmRetrobatBrowser.mouseWheel( aUp: Boolean );
 begin
-   if aUp then
+   if ( aUp ) then
       FScrollY:= Max( 0, FScrollY - 120 )
    else
       FScrollY:= FScrollY + 120;
@@ -147,10 +123,12 @@ end;
 function TfrmRetrobatBrowser.getItemKey( aIndex: Integer ): string;
 begin
    Result:= '';
-   if ( FItems = nil ) or ( aIndex >= FItems.Count ) then Exit;
+   if ( FItems = nil ) or
+      ( aIndex >= FItems.Count ) then
+      Exit;
    var _obj:= FItems.Items[aIndex] as TJSONObject;
    Result:= _obj.GetValue<string>( 'id', '' );
-   if Result.IsEmpty then
+   if ( Result.IsEmpty ) then
       Result:= _obj.GetValue<string>( 'name', '' );
 end;
 
@@ -169,7 +147,7 @@ procedure TfrmRetrobatBrowser.loadImage( const aKey, aSystem, aGameId: string;
 begin
    var _bytes: TBytes;
    var _err  : string;
-   if aIsSystem then
+   if ( aIsSystem ) then
       TESApi.getSystemLogo( FSettings, aSystem, _bytes, _err )
    else
       TESApi.getGameMedia( FSettings, aSystem, aGameId, 'thumbnail', _bytes, _err );
@@ -187,51 +165,51 @@ begin
                 ( _bytes[_startIdx] = Ord( '<' ) );
 
    var _cached:= TCachedImage.Create;
-   if _isSvg then begin
+   if ( _isSvg ) then begin
       var _txt:= TEncoding.UTF8.GetString( _bytes, _startIdx,
-                                            Length( _bytes ) - _startIdx );
+                                           Length( _bytes ) - _startIdx );
       _cached.isSvg:= True;
-      _cached.svg  := TSkSvg.Create( nil );
+      _cached.svg:= TSkSvg.Create( nil );
       _cached.svg.Svg.Source:= _txt;
 
       var _vbRect: TRectF;
-      var _hasVB := _cached.svg.Svg.DOM.Root.TryGetViewBox( _vbRect );
-      var _size  := _cached.svg.Svg.DOM.Root.GetIntrinsicSize( TSizeF.Create( 0, 0 ) );
+      var _hasVB:= _cached.svg.Svg.DOM.Root.TryGetViewBox( _vbRect );
+      var _size:= _cached.svg.Svg.DOM.Root.GetIntrinsicSize( TSizeF.Create( 0, 0 ) );
 
-      _cached.viewBoxMinX  := 0;
-      _cached.viewBoxMinY  := 0;
-      _cached.viewBoxWidth := 0;
+      _cached.viewBoxMinX:= 0;
+      _cached.viewBoxMinY:= 0;
+      _cached.viewBoxWidth:= 0;
       _cached.viewBoxHeight:= 0;
 
-      if _hasVB then begin
-         _cached.viewBoxMinX  := _vbRect.Left;
-         _cached.viewBoxMinY  := _vbRect.Top;
-         _cached.viewBoxWidth := _vbRect.Width;
+      if ( _hasVB ) then begin
+         _cached.viewBoxMinX:= _vbRect.Left;
+         _cached.viewBoxMinY:= _vbRect.Top;
+         _cached.viewBoxWidth:= _vbRect.Width;
          _cached.viewBoxHeight:= _vbRect.Height;
       end;
 
-      if _size.Width > 0 then
-         _cached.viewBoxWidth := _size.Width;
-      if _size.Height > 0 then
+      if ( _size.Width > 0 ) then
+         _cached.viewBoxWidth:= _size.Width;
+      if ( _size.Height > 0 ) then
          _cached.viewBoxHeight:= _size.Height;
-      if _cached.svg.Svg.DOM.Root.TryGetViewBox( _vbRect ) then begin
-         _cached.viewBoxMinX := _vbRect.Left;
-         _cached.viewBoxMinY := _vbRect.Top;
+      if ( _cached.svg.Svg.DOM.Root.TryGetViewBox( _vbRect ) ) then begin
+         _cached.viewBoxMinX:= _vbRect.Left;
+         _cached.viewBoxMinY:= _vbRect.Top;
       end;
       if ( _cached.viewBoxWidth = 0 ) or ( _cached.viewBoxHeight = 0 ) then begin
-         _cached.viewBoxWidth := _vbRect.Width;
+         _cached.viewBoxWidth:= _vbRect.Width;
          _cached.viewBoxHeight:= _vbRect.Height;
       end;
    end else begin
-      _cached.isSvg  := False;
+      _cached.isSvg:= False;
       _cached.skImage:= TSkImage.MakeFromEncoded( _bytes );
    end;
    FImageCache.AddOrSetValue( aKey, _cached );
 end;
 
 procedure TfrmRetrobatBrowser.drawTile( const ACanvas: ISkCanvas;
-                                         const aTileRect, aImgRect, aLblRect: TRectF;
-                                         const aName, aKey: string );
+                                        const aTileRect, aImgRect, aLblRect: TRectF;
+                                        const aName, aKey: string );
 begin
    // Tile background
    var _tilePaint: ISkPaint:= TSkPaint.Create;
@@ -244,39 +222,38 @@ begin
 
    if ( _img <> nil ) then begin
       if ( _img.isSvg ) and ( _img.svg <> nil ) then begin
-         var _vbW  := _img.viewBoxWidth;
-         var _vbH  := _img.viewBoxHeight;
-         var _minX := _img.viewBoxMinX;
-         var _minY := _img.viewBoxMinY;
+         var _vbW:= _img.viewBoxWidth;
+         var _vbH:= _img.viewBoxHeight;
+         var _minX:= _img.viewBoxMinX;
+         var _minY:= _img.viewBoxMinY;
          if ( _vbW > 0 ) and ( _vbH > 0 ) then begin
             var _scale:= Min( aImgRect.Width / _vbW, aImgRect.Height / _vbH );
-            var _dx   := aImgRect.Left + ( aImgRect.Width - _vbW * _scale ) / 2;
-            var _dy   := aImgRect.Top + ( aImgRect.Height - _vbH * _scale ) / 2;
+            var _dx:= aImgRect.Left + ( aImgRect.Width - _vbW * _scale ) / 2;
+            var _dy:= aImgRect.Top + ( aImgRect.Height - _vbH * _scale ) / 2;
             ACanvas.Save;
             ACanvas.Translate( _dx - _minX * _scale, _dy - _minY * _scale );
             ACanvas.Scale( _scale, _scale );
             _img.svg.Svg.DOM.Render( ACanvas );
             ACanvas.Restore;
          end else begin
-            _img.svg.Svg.DOM.SetContainerSize(
-               TSizeF.Create( aImgRect.Width, aImgRect.Height ) );
+            _img.svg.Svg.DOM.SetContainerSize( TSizeF.Create( aImgRect.Width, aImgRect.Height ) );
             ACanvas.Save;
             ACanvas.Translate( aImgRect.Left, aImgRect.Top );
             _img.svg.Svg.DOM.Render( ACanvas );
             ACanvas.Restore;
          end;
       end else if ( _img.skImage <> nil ) then begin
-         var _iw   := Single( _img.skImage.Width );
-         var _ih   := Single( _img.skImage.Height );
+         var _iw:= Single( _img.skImage.Width );
+         var _ih:= Single( _img.skImage.Height );
          var _scale:= Min( aImgRect.Width / _iw, aImgRect.Height / _ih );
-         var _dw   := _iw * _scale;
-         var _dh   := _ih * _scale;
-         var _dx   := aImgRect.Left + ( aImgRect.Width - _dw ) / 2;
+         var _dw:= _iw * _scale;
+         var _dh:= _ih * _scale;
+         var _dx:= aImgRect.Left + ( aImgRect.Width - _dw ) / 2;
          var _dy   := aImgRect.Top + ( aImgRect.Height - _dh ) / 2;
          ACanvas.DrawImageRect( _img.skImage,
                                 TRectF.Create( _dx, _dy, _dx + _dw, _dy + _dh ),
                                 TSkSamplingOptions.Create( TSkFilterMode.Linear,
-                                                            TSkMipmapMode.Linear ) );
+                                                           TSkMipmapMode.Linear ) );
       end;
    end;
 
@@ -290,34 +267,34 @@ begin
    _txtPaint.Color:= TAlphaColors.White;
    var _font:= TSkFont.Create( TSkTypeface.MakeDefault, 10 );
    ACanvas.DrawSimpleText( aName, aLblRect.Left + 5,
-                            aLblRect.Bottom - 6, _font, _txtPaint );
+                           aLblRect.Bottom - 6, _font, _txtPaint );
 end;
 
 procedure TfrmRetrobatBrowser.SkPaintBoxDraw( Sender: TObject;
-                                               const ACanvas: ISkCanvas;
-                                               const ARect: TRectF;
-                                               const AOpacity: Single );
+                                              const ACanvas: ISkCanvas;
+                                              const ARect: TRectF;
+                                              const AOpacity: Single );
 begin
    ACanvas.DrawColor( $FF302020 );
    if ( FItems = nil ) then Exit;
 
    var _startRow:= getVisibleStartRow;
-   var _endRow  := getVisibleEndRow;
+   var _endRow:= getVisibleEndRow;
 
    for var ii:= _startRow * FCols to ( _endRow * FCols ) - 1 do begin
       if ( ii >= FItems.Count ) then Break;
-      var _item    := FItems.Items[ii] as TJSONObject;
-      var _col     := ii mod FCols;
-      var _row     := ii div FCols;
-      var _x       := Single( _col * cstTileWidth );
-      var _y       := Single( _row * cstTileHeight ) - FScrollY;
-      var _key     := getItemKey( ii );
-      var _name    := _item.GetValue<string>( 'name', '' );
+      var _item:= FItems.Items[ii] as TJSONObject;
+      var _col:= ii mod FCols;
+      var _row:= ii div FCols;
+      var _x:= Single( _col * cstTileWidth );
+      var _y:= Single( _row * cstTileHeight ) - FScrollY;
+      var _key:= getItemKey( ii );
+      var _name:= _item.GetValue<string>( 'name', '' );
       var _tileRect:= TRectF.Create( _x, _y, _x + cstTileWidth, _y + cstTileHeight );
-      var _imgRect := TRectF.Create( _x, _y, _x + cstTileWidth,
-                                      _y + cstTileHeight - cstLabelHeight );
-      var _lblRect := TRectF.Create( _x, _y + cstTileHeight - cstLabelHeight,
-                                      _x + cstTileWidth, _y + cstTileHeight );
+      var _imgRect:= TRectF.Create( _x, _y, _x + cstTileWidth,
+                                    _y + cstTileHeight - cstLabelHeight );
+      var _lblRect:= TRectF.Create( _x, _y + cstTileHeight - cstLabelHeight,
+                                    _x + cstTileWidth, _y + cstTileHeight );
 
       if ( not FImageCache.ContainsKey( _key ) ) then
          loadImage( _key,
@@ -330,9 +307,9 @@ begin
 end;
 
 procedure TfrmRetrobatBrowser.SkPaintBoxMouseDown( Sender: TObject;
-                                                    Button: TMouseButton;
-                                                    Shift: TShiftState;
-                                                    X, Y: Integer );
+                                                   Button: TMouseButton;
+                                                   Shift: TShiftState;
+                                                   X, Y: Integer );
 begin
    if ( Button <> mbLeft ) then Exit;
    if ( FItems = nil ) then Exit;
@@ -359,8 +336,8 @@ end;
 procedure TfrmRetrobatBrowser.loadSystems;
 begin
    clearAll;
-   FCurrentSystem       := '';
-   btnBack.Visible      := False;
+   FCurrentSystem:= '';
+   btnBack.Visible:= False;
    lblBreadcrumb.Caption:= 'Systems';
 
    var _response, _err: string;
@@ -374,8 +351,8 @@ end;
 procedure TfrmRetrobatBrowser.loadGames( const aSystem: string );
 begin
    clearAll;
-   FCurrentSystem       := aSystem;
-   btnBack.Visible      := True;
+   FCurrentSystem:= aSystem;
+   btnBack.Visible:= True;
    lblBreadcrumb.Caption:= 'Systems > ' + aSystem;
 
    var _response, _err: string;
