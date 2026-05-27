@@ -172,8 +172,12 @@
             <Form>Form2</Form>
         </DCCReference>
         <DCCReference Include="Logic\EsSystemsReader.pas">
-            <Form>$R *.res</Form>
+            <Form>,
+  Rpcs3Utils in &apos;Shared\Rpcs3Utils.pas&apos;;
+
+{$R *.res</Form>
         </DCCReference>
+        <DCCReference Include="Shared\Rpcs3Utils.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>

@@ -30,7 +30,8 @@ uses
   ConfirmDelete in 'Forms\ConfirmDelete.pas' {Form1},
   ESApi in 'Network\ESApi.pas',
   RetrobatBrowser in 'Forms\RetrobatBrowser.pas' {Form2},
-  EsSystemsReader in 'Logic\EsSystemsReader.pas';
+  EsSystemsReader in 'Logic\EsSystemsReader.pas',
+  Rpcs3Utils in 'Shared\Rpcs3Utils.pas';
 
 {$R *.res}
 

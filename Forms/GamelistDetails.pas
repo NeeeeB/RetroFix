@@ -181,6 +181,7 @@ uses
    Winapi.ShellAPI,
    HashUtils,
    RomUtils,
+   Rpcs3Utils,
    ScreenScraperApi,
    GamelistParser,
    GamelistChecker,
@@ -1034,19 +1035,37 @@ end;
 
 procedure TfrmGamelistDetails.mniDeleteMissingROMClick( Sender: TObject );
 begin
+   // Detect PS3 games in selection
+   var _hasPs3Games:= False;
+   var _node:= vstMissingRoms.GetFirstSelected;
+   while ( _node <> nil ) do begin
+      var _data:= PGamelistNodeData( vstMissingRoms.GetNodeData( _node ) );
+      if ( _data <> nil ) and ( not _data.isGroup ) and ( _data.ref <> nil ) then begin
+         if ( _data.ref.gamelistResult.systemName = 'ps3' ) then begin
+            _hasPs3Games:= True;
+            Break;
+         end;
+      end;
+      _node:= vstMissingRoms.GetNextSelected( _node );
+   end;
+
    var _deleteOrphans: Boolean;
+   var _deleteRpcs3Data: Boolean;
    if ( vstMissingRoms.SelectedCount = 0 ) or
       ( not TfrmConfirmDelete.Execute( Format( rstDeleteMissingROMs, [vstMissingRoms.SelectedCount] ),
-                                       _deleteOrphans ) ) then
+                                       _hasPs3Games, _deleteOrphans, _deleteRpcs3Data ) ) then
       Exit;
 
    Screen.Cursor:= crHourGlass;
 
-   // Collect refs grouped by gamelistResult
+   var _rpcs3Map: TDictionary<string, string>:= nil;
+   if ( _hasPs3Games ) and ( _deleteRpcs3Data ) then
+      _rpcs3Map:= buildRpcs3TitleMap( FSettings.retrobatPath );
+
    var _refsByResult:= TDictionary<TGamelistResult, TList<TGameEntryRef>>.Create;
    var _affectedResults:= TList<TGamelistResult>.Create;
    try
-      var _node:= vstMissingRoms.GetFirstSelected;
+      _node:= vstMissingRoms.GetFirstSelected;
       while ( _node <> nil ) do begin
          var _data:= PGamelistNodeData( vstMissingRoms.GetNodeData( _node ) );
          if ( _data <> nil ) and ( not _data.isGroup ) and ( _data.ref <> nil ) then begin
@@ -1060,26 +1079,25 @@ begin
          _node:= vstMissingRoms.GetNextSelected( _node );
       end;
 
-      // One pass per gamelist
       for var _r in _affectedResults do begin
          var _refs:= _refsByResult[_r];
-
-         // Build array of rom paths to remove
          var _romPaths: TArray<string>;
          for var _ref in _refs do
             _romPaths:= _romPaths + [_ref.romPath];
-
-         // Remove all at once from gamelist
          removeGamesFromGamelist( _r.romDir, _romPaths );
 
-         // Update FResults
          var _gamesList:= TList<TGameEntry>.Create;
          try
             for var _g in _r.games do begin
                var _found:= False;
-               for var _p in _romPaths do
-                  if ( _g.romPath = _p ) then begin _found:= True; Break; end;
-               if ( not _found ) then _gamesList.Add( _g );
+               for var _p in _romPaths do begin
+                  if ( _g.romPath = _p ) then begin
+                     _found:= True;
+                     Break;
+                  end;
+               end;
+               if ( not _found ) then
+                  _gamesList.Add( _g );
             end;
             _r.games:= _gamesList.ToArray;
          finally
@@ -1096,15 +1114,15 @@ begin
                      Break;
                   end;
                end;
-               if ( not _found ) then _missingList.Add( _s );
+               if ( not _found ) then
+                  _missingList.Add( _s );
             end;
             _r.missingROMs:= _missingList.ToArray;
          finally
             _missingList.Free;
          end;
 
-         // Delete orphans if requested
-         if ( _deleteOrphans ) then
+         if ( _deleteOrphans ) then begin
             for var _ref in _refs do begin
                var _romName:= TPath.GetFileNameWithoutExtension( _ref.romPath );
                for var _subDir in [cstImages, cstVideos, cstManuals] do begin
@@ -1117,16 +1135,30 @@ begin
                   end;
                end;
             end;
+         end;
 
-         // Reparse
+         if ( _deleteRpcs3Data ) and ( _r.systemName = 'ps3' ) and
+            ( _rpcs3Map <> nil ) then begin
+            for var _ref in _refs do begin
+               var _serial: string;
+               if ( findRpcs3Serial( _rpcs3Map, _ref.gameName, _serial ) ) then begin
+                  var _rpcs3Path:= TPath.Combine( TPath.Combine( FSettings.retrobatPath,
+                                                                 'saves\ps3\rpcs3\dev_hdd0\game' ),
+                                                  _serial );
+                  if ( TDirectory.Exists( _rpcs3Path ) ) then
+                     TDirectory.Delete( _rpcs3Path, True );
+               end;
+            end;
+         end;
+
          var _newResult:= parseGamelist( _r.romDir, _r.systemName );
          _r.games:= _newResult.games;
          _r.missingMedias:= _newResult.missingMedias;
          _r.orphanMedias:= checkOrphanMedias( _r.romDir, _r.games );
          _newResult.Free;
       end;
-
    finally
+      _rpcs3Map.Free;
       for var _list in _refsByResult.Values do
          _list.Free;
       _refsByResult.Free;
