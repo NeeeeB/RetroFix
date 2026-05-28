@@ -227,9 +227,9 @@ begin
 end;
 
 procedure TfrmGamelistDetails.setSSData( aSystemsMapping: TDictionary<string, Integer>;
-                                          const aUserInfo: TSSUserInfo;
-                                          aSettings: TSettings;
-                                          aSSAvailable: Boolean );
+                                         const aUserInfo: TSSUserInfo;
+                                         aSettings: TSettings;
+                                         aSSAvailable: Boolean );
 begin
    FSSSystemsMapping:= aSystemsMapping;
    FSSUserInfo:= aUserInfo;

@@ -128,7 +128,7 @@ begin
 
       var _systemes:= _responseObj.GetValue<TJSONArray>( cstSSSystemes, nil );
       if ( _systemes = nil ) then begin
-         aError:= 'Missing systemes array';
+         aError:= 'Missing systems array';
          Exit;
       end;
 

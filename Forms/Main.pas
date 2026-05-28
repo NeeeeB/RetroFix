@@ -192,6 +192,9 @@ begin
                                 FSSSystemsMapping, _err ) ) then begin
       FSSAvailable:= False;
       ShowMessage( rstSSSystemMappingFailed + _err );
+   end else begin
+      for var _a in cstSSExtraSystemsMapping do
+         FSSSystemsMapping.AddOrSetValue( _a.name, _a.id );
    end;
 end;
 
