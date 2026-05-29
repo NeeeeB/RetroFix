@@ -3,78 +3,84 @@
 interface
 
 uses
-   System.SysUtils, System.Classes,
-   System.Generics.Collections, System.Math,
-   System.JSON, System.Types, System.UITypes,
-   Vcl.Forms, Vcl.Controls, Vcl.ExtCtrls, Vcl.StdCtrls,
-   Vcl.Skia, Vcl.Graphics,
-   System.Skia,
+   System.SysUtils, System.Classes, System.Generics.Collections, System.Math,
+   System.JSON, System.Types, System.UITypes, System.Threading,
+   Vcl.Forms, Vcl.Controls, Vcl.ExtCtrls, Vcl.StdCtrls, Vcl.ControlList,
+   Vcl.Graphics, Vcl.Skia, System.Skia,
    ESApi, Constantes, Types;
+
+const
+   NB_COLS = 4; // Notre hack multi-colonnes cible 4 éléments par ligne
 
 type
    TfrmRetrobatBrowser = class( TForm )
-      SkPaintBox: TSkPaintBox;
       pnlTop: TPanel;
       lblBreadcrumb: TLabel;
       btnBack: TButton;
+      ControlList1: TControlList;
+      imgCol0: TImage;
+      lblCol0: TLabel;
+      imgCol1: TImage;
+      lblCol1: TLabel;
+      imgCol2: TImage;
+      lblCol2: TLabel;
+      imgCol3: TImage;
+      lblCol3: TLabel;
       procedure FormCreate( Sender: TObject );
       procedure FormDestroy( Sender: TObject );
-      procedure FormResize( Sender: TObject );
       procedure FormShow( Sender: TObject );
-      procedure FormMouseWheel( Sender: TObject; Shift: TShiftState;
-                                WheelDelta: Integer; MousePos: TPoint;
-                                var Handled: Boolean );
-      procedure SkPaintBoxDraw( Sender: TObject; const ACanvas: ISkCanvas;
-                                const ARect: TRectF; const AOpacity: Single );
-      procedure SkPaintBoxMouseDown( Sender: TObject; Button: TMouseButton;
-                                     Shift: TShiftState; X, Y: Integer );
+      procedure ControlList1BeforeDrawItem( AIndex: Integer; ACanvas: TCanvas;
+                                            ARect: TRect; AState: TOwnerDrawState );
+      procedure OnGameClick( Sender: TObject );
       procedure btnBackClick( Sender: TObject );
    private
       FSettings: TSettings;
       FItems: TJSONArray;
       FCurrentSystem: string;
-      FImageCache: TObjectDictionary<string, TCachedImage>;
-      FCols: Integer;
-      FScrollY: Single;
-      procedure initLayout;
+
+      // Liste des images en cours de téléchargement pour éviter les doublons de requêtes
+      FDownloadingKeys: THashSet<string>;
+
+      // Cache VCL local compatible avec TImage standard
+      FImageCache: TObjectDictionary<string, TBitmap>;
+
+      // Tableaux pratiques pour mapper nos composants du ControlList
+      FImages: array[0..NB_COLS-1] of TImage;
+      FLabels: array[0..NB_COLS-1] of TLabel;
+
       procedure clearAll;
       procedure loadSystems;
       procedure loadGames( const aSystem: string );
-      procedure loadImage( const aKey, aSystem, aGameId: string; aIsSystem: Boolean );
+      procedure loadImageAsync( const aKey, aSystem, aGameId: string; aIsSystem: Boolean; aRowIndex: Integer );
       function getItemKey( aIndex: Integer ): string;
-      function getVisibleStartRow: Integer;
-      function getVisibleEndRow: Integer;
-      procedure drawTile( const ACanvas: ISkCanvas;
-                          const aTileRect, aImgRect, aLblRect: TRectF;
-                          const aName, aKey: string );
+      procedure UpdateControlListCount;
    public
       procedure init( aSettings: TSettings );
-      procedure mouseWheel( aUp: Boolean );
    end;
 
 implementation
 
 uses
+   Vcl.Dialogs,
    System.StrUtils;
 
 {$R *.dfm}
 
 procedure TfrmRetrobatBrowser.FormCreate( Sender: TObject );
 begin
-   FImageCache:= TObjectDictionary<string, TCachedImage>.Create( [doOwnsValues] );
-   FCols      := 1;
-   FScrollY   := 0;
+   FImageCache     := TObjectDictionary<string, TBitmap>.Create( [doOwnsValues] );
+   FDownloadingKeys:= THashSet<string>.Create;
+
+   // On mappe nos composants pour pouvoir faire des boucles dessus
+   FImages[0] := imgCol0; FImages[1] := imgCol1; FImages[2] := imgCol2; FImages[3] := imgCol3;
+   FLabels[0] := lblCol0; FLabels[1] := lblCol1; FLabels[2] := lblCol2; FLabels[3] := lblCol3;
 end;
 
 procedure TfrmRetrobatBrowser.FormDestroy( Sender: TObject );
 begin
-   FreeAndNil( FItems );
+   clearAll;
    FImageCache.Free;
-end;
-
-procedure TfrmRetrobatBrowser.FormResize( Sender: TObject );
-begin
-   initLayout;
+   FDownloadingKeys.Free;
 end;
 
 procedure TfrmRetrobatBrowser.FormShow( Sender: TObject );
@@ -82,254 +88,218 @@ begin
    loadSystems;
 end;
 
-procedure TfrmRetrobatBrowser.FormMouseWheel( Sender: TObject;
-                                              Shift: TShiftState;
-                                              WheelDelta: Integer;
-                                              MousePos: TPoint;
-                                              var Handled: Boolean );
-begin
-   FScrollY:= Max( 0, FScrollY - WheelDelta );
-   SkPaintBox.Invalidate;
-   Handled:= True;
-end;
-
 procedure TfrmRetrobatBrowser.init( aSettings: TSettings );
 begin
    FSettings:= aSettings;
-end;
-
-procedure TfrmRetrobatBrowser.mouseWheel( aUp: Boolean );
-begin
-   if ( aUp ) then
-      FScrollY:= Max( 0, FScrollY - 120 )
-   else
-      FScrollY:= FScrollY + 120;
-   SkPaintBox.Invalidate;
 end;
 
 procedure TfrmRetrobatBrowser.clearAll;
 begin
    FreeAndNil( FItems );
    FImageCache.Clear;
-   FScrollY:= 0;
-end;
-
-procedure TfrmRetrobatBrowser.initLayout;
-begin
-   FCols:= Max( 1, Trunc( SkPaintBox.Width / cstTileWidth ) );
-   SkPaintBox.Invalidate;
+   FDownloadingKeys.Clear;
+   ControlList1.ItemCount := 0;
 end;
 
 function TfrmRetrobatBrowser.getItemKey( aIndex: Integer ): string;
 begin
    Result:= '';
-   if ( FItems = nil ) or
-      ( aIndex >= FItems.Count ) then
-      Exit;
+   if ( FItems = nil ) or ( aIndex >= FItems.Count ) then Exit;
    var _obj:= FItems.Items[aIndex] as TJSONObject;
    Result:= _obj.GetValue<string>( 'id', '' );
    if ( Result.IsEmpty ) then
       Result:= _obj.GetValue<string>( 'name', '' );
 end;
 
-function TfrmRetrobatBrowser.getVisibleStartRow: Integer;
+procedure TfrmRetrobatBrowser.UpdateControlListCount;
 begin
-   Result:= Max( 0, Trunc( FScrollY / cstTileHeight ) );
-end;
-
-function TfrmRetrobatBrowser.getVisibleEndRow: Integer;
-begin
-   Result:= getVisibleStartRow + Trunc( SkPaintBox.Height / cstTileHeight ) + 2;
-end;
-
-procedure TfrmRetrobatBrowser.loadImage( const aKey, aSystem, aGameId: string;
-                                          aIsSystem: Boolean );
-begin
-   var _bytes: TBytes;
-   var _err  : string;
-   if ( aIsSystem ) then
-      TESApi.getSystemLogo( FSettings, aSystem, _bytes, _err )
+   if FItems = nil then
+      ControlList1.ItemCount := 0
    else
-      TESApi.getGameMedia( FSettings, aSystem, aGameId, 'thumbnail', _bytes, _err );
-   if ( Length( _bytes ) = 0 ) then Exit;
-
-   // Detect SVG from bytes
-   var _startIdx:= 0;
-   if ( Length( _bytes ) >= 3 ) and
-      ( _bytes[0] = $EF ) and ( _bytes[1] = $BB ) and ( _bytes[2] = $BF ) then
-      _startIdx:= 3;
-   while ( _startIdx < Length( _bytes ) ) and
-         ( _bytes[_startIdx] <= 32 ) do
-      Inc( _startIdx );
-   var _isSvg:= ( _startIdx < Length( _bytes ) ) and
-                ( _bytes[_startIdx] = Ord( '<' ) );
-
-   var _cached:= TCachedImage.Create;
-   if ( _isSvg ) then begin
-      var _txt:= TEncoding.UTF8.GetString( _bytes, _startIdx,
-                                           Length( _bytes ) - _startIdx );
-      _cached.isSvg:= True;
-      _cached.svg:= TSkSvg.Create( nil );
-      _cached.svg.Svg.Source:= _txt;
-
-      var _vbRect: TRectF;
-      var _hasVB:= _cached.svg.Svg.DOM.Root.TryGetViewBox( _vbRect );
-      var _size:= _cached.svg.Svg.DOM.Root.GetIntrinsicSize( TSizeF.Create( 0, 0 ) );
-
-      _cached.viewBoxMinX:= 0;
-      _cached.viewBoxMinY:= 0;
-      _cached.viewBoxWidth:= 0;
-      _cached.viewBoxHeight:= 0;
-
-      if ( _hasVB ) then begin
-         _cached.viewBoxMinX:= _vbRect.Left;
-         _cached.viewBoxMinY:= _vbRect.Top;
-         _cached.viewBoxWidth:= _vbRect.Width;
-         _cached.viewBoxHeight:= _vbRect.Height;
-      end;
-
-      if ( _size.Width > 0 ) then
-         _cached.viewBoxWidth:= _size.Width;
-      if ( _size.Height > 0 ) then
-         _cached.viewBoxHeight:= _size.Height;
-      if ( _cached.svg.Svg.DOM.Root.TryGetViewBox( _vbRect ) ) then begin
-         _cached.viewBoxMinX:= _vbRect.Left;
-         _cached.viewBoxMinY:= _vbRect.Top;
-      end;
-      if ( _cached.viewBoxWidth = 0 ) or ( _cached.viewBoxHeight = 0 ) then begin
-         _cached.viewBoxWidth:= _vbRect.Width;
-         _cached.viewBoxHeight:= _vbRect.Height;
-      end;
-   end else begin
-      _cached.isSvg:= False;
-      _cached.skImage:= TSkImage.MakeFromEncoded( _bytes );
-   end;
-   FImageCache.AddOrSetValue( aKey, _cached );
+      // Hack multi-colonne : s'il y a 11 jeux, 11/4 = 2.75 -> Il faut 3 lignes
+      ControlList1.ItemCount := Ceil( FItems.Count / NB_COLS );
 end;
 
-procedure TfrmRetrobatBrowser.drawTile( const ACanvas: ISkCanvas;
-                                        const aTileRect, aImgRect, aLblRect: TRectF;
-                                        const aName, aKey: string );
+// C'est ici que la magie virtuelle opère par ligne
+procedure TfrmRetrobatBrowser.ControlList1BeforeDrawItem( AIndex: Integer;
+  ACanvas: TCanvas; ARect: TRect; AState: TOwnerDrawState );
+var
+  iCol, iGlobalIndex: Integer;
+  _item: TJSONObject;
+  _name, _key: string;
+  _bmp: TBitmap;
 begin
-   // Tile background
-   var _tilePaint: ISkPaint:= TSkPaint.Create;
-   _tilePaint.Color:= $FF404040;
-   ACanvas.DrawRect( aTileRect, _tilePaint );
+   // AIndex représente le numéro de la ligne courante du TControlList
+   for iCol := 0 to NB_COLS - 1 do begin
+      iGlobalIndex := ( AIndex * NB_COLS ) + iCol;
 
-   // Image
-   var _img: TCachedImage:= nil;
-   FImageCache.TryGetValue( aKey, _img );
+      // Si on dépasse le nombre total de jeux (fin de la grille vide)
+      if iGlobalIndex >= FItems.Count then begin
+         FImages[iCol].Visible := False;
+         FLabels[iCol].Visible := False;
+         Continue;
+      end;
 
-   if ( _img <> nil ) then begin
-      if ( _img.isSvg ) and ( _img.svg <> nil ) then begin
-         var _vbW:= _img.viewBoxWidth;
-         var _vbH:= _img.viewBoxHeight;
-         var _minX:= _img.viewBoxMinX;
-         var _minY:= _img.viewBoxMinY;
-         if ( _vbW > 0 ) and ( _vbH > 0 ) then begin
-            var _scale:= Min( aImgRect.Width / _vbW, aImgRect.Height / _vbH );
-            var _dx:= aImgRect.Left + ( aImgRect.Width - _vbW * _scale ) / 2;
-            var _dy:= aImgRect.Top + ( aImgRect.Height - _vbH * _scale ) / 2;
-            ACanvas.Save;
-            ACanvas.Translate( _dx - _minX * _scale, _dy - _minY * _scale );
-            ACanvas.Scale( _scale, _scale );
-            _img.svg.Svg.DOM.Render( ACanvas );
-            ACanvas.Restore;
-         end else begin
-            _img.svg.Svg.DOM.SetContainerSize( TSizeF.Create( aImgRect.Width, aImgRect.Height ) );
-            ACanvas.Save;
-            ACanvas.Translate( aImgRect.Left, aImgRect.Top );
-            _img.svg.Svg.DOM.Render( ACanvas );
-            ACanvas.Restore;
+      FImages[iCol].Visible := True;
+      FLabels[iCol].Visible := True;
+
+      _item := FItems.Items[iGlobalIndex] as TJSONObject;
+      _name := _item.GetValue<string>( 'name', '' );
+      _key  := getItemKey( iGlobalIndex );
+
+      FLabels[iCol].Caption := _name;
+
+      // Gestion de l'image via le cache
+      if FImageCache.TryGetValue( _key, _bmp ) then begin
+         FImages[iCol].Picture.Bitmap := _bmp;
+      end else begin
+         FImages[iCol].Picture := nil; // Vide (ou met une image "placeholder.png" par défaut)
+
+         // Lancement du téléchargement asynchrone si pas déjà en cours
+         if not FDownloadingKeys.Contains( _key ) then begin
+            FDownloadingKeys.Add( _key );
+            loadImageAsync( _key,
+                           IfThen( FCurrentSystem.IsEmpty, _name, FCurrentSystem ),
+                           _item.GetValue<string>( 'id', '' ),
+                           FCurrentSystem.IsEmpty,
+                           AIndex ); // On passe l'index de la ligne pour rafraîchir plus tard
          end;
-      end else if ( _img.skImage <> nil ) then begin
-         var _iw:= Single( _img.skImage.Width );
-         var _ih:= Single( _img.skImage.Height );
-         var _scale:= Min( aImgRect.Width / _iw, aImgRect.Height / _ih );
-         var _dw:= _iw * _scale;
-         var _dh:= _ih * _scale;
-         var _dx:= aImgRect.Left + ( aImgRect.Width - _dw ) / 2;
-         var _dy   := aImgRect.Top + ( aImgRect.Height - _dh ) / 2;
-         ACanvas.DrawImageRect( _img.skImage,
-                                TRectF.Create( _dx, _dy, _dx + _dw, _dy + _dh ),
-                                TSkSamplingOptions.Create( TSkFilterMode.Linear,
-                                                           TSkMipmapMode.Linear ) );
       end;
    end;
-
-   // Label background
-   var _lblPaint: ISkPaint:= TSkPaint.Create;
-   _lblPaint.Color:= $CC000000;
-   ACanvas.DrawRect( aLblRect, _lblPaint );
-
-   // Label text
-   var _txtPaint: ISkPaint:= TSkPaint.Create;
-   _txtPaint.Color:= TAlphaColors.White;
-   var _font:= TSkFont.Create( TSkTypeface.MakeDefault, 10 );
-   ACanvas.DrawSimpleText( aName, aLblRect.Left + 5,
-                           aLblRect.Bottom - 6, _font, _txtPaint );
 end;
 
-procedure TfrmRetrobatBrowser.SkPaintBoxDraw( Sender: TObject;
-                                              const ACanvas: ISkCanvas;
-                                              const ARect: TRectF;
-                                              const AOpacity: Single );
+// TÉLÉCHARGEMENT ASYNCHRONE : Ne gèle plus l'UI
+procedure TfrmRetrobatBrowser.loadImageAsync( const aKey, aSystem, aGameId: string;
+  aIsSystem: Boolean; aRowIndex: Integer );
 begin
-   ACanvas.DrawColor( $FF302020 );
-   if ( FItems = nil ) then Exit;
+   TTask.Run( procedure
+   var
+      _bytes: TBytes;
+      _err  : string;
+      _bmp: TBitmap;
+      _startIdx: Integer;
+      _isSvg: Boolean;
+   begin
+      if ( aIsSystem ) then
+         TESApi.getSystemLogo( FSettings, aSystem, _bytes, _err )
+      else
+         TESApi.getGameMedia( FSettings, aSystem, aGameId, 'thumbnail', _bytes, _err );
 
-   var _startRow:= getVisibleStartRow;
-   var _endRow:= getVisibleEndRow;
+      if ( Length( _bytes ) > 0 ) then begin
+         try
+            // --- DETECTION DU FORMAT SVG ---
+            _startIdx := 0;
+            if ( Length( _bytes ) >= 3 ) and
+               ( _bytes[0] = $EF ) and ( _bytes[1] = $BB ) and ( _bytes[2] = $BF ) then
+               _startIdx := 3;
+            while ( _startIdx < Length( _bytes ) ) and ( _bytes[_startIdx] <= 32 ) do
+               Inc( _startIdx );
+            _isSvg := ( _startIdx < Length( _bytes ) ) and ( _bytes[_startIdx] = Ord( '<' ) );
 
-   for var ii:= _startRow * FCols to ( _endRow * FCols ) - 1 do begin
-      if ( ii >= FItems.Count ) then Break;
-      var _item:= FItems.Items[ii] as TJSONObject;
-      var _col:= ii mod FCols;
-      var _row:= ii div FCols;
-      var _x:= Single( _col * cstTileWidth );
-      var _y:= Single( _row * cstTileHeight ) - FScrollY;
-      var _key:= getItemKey( ii );
-      var _name:= _item.GetValue<string>( 'name', '' );
-      var _tileRect:= TRectF.Create( _x, _y, _x + cstTileWidth, _y + cstTileHeight );
-      var _imgRect:= TRectF.Create( _x, _y, _x + cstTileWidth,
-                                    _y + cstTileHeight - cstLabelHeight );
-      var _lblRect:= TRectF.Create( _x, _y + cstTileHeight - cstLabelHeight,
-                                    _x + cstTileWidth, _y + cstTileHeight );
+            _bmp := TBitmap.Create;
+            _bmp.PixelFormat := pf32bit;
 
-      if ( not FImageCache.ContainsKey( _key ) ) then
-         loadImage( _key,
-                    IfThen( FCurrentSystem.IsEmpty, _name, FCurrentSystem ),
-                    _item.GetValue<string>( 'id', '' ),
-                    FCurrentSystem.IsEmpty );
+            if _isSvg then begin
+               // --- CAS TEXTE VECTORIEL (SVG) ---
+               var _txt := TEncoding.UTF8.GetString( _bytes, _startIdx, Length( _bytes ) - _startIdx );
+               var _skSvg := TSkSvg.Create(nil);
+               try
+                  _skSvg.Svg.Source := _txt;
 
-      drawTile( ACanvas, _tileRect, _imgRect, _lblRect, _name, _key );
-   end;
+                  // On récupère la taille définie dans le SVG
+                  var _vbRect: TRectF;
+                  var _w := 200.0;
+                  var _h := 200.0;
+
+                  if _skSvg.Svg.DOM.Root.TryGetViewBox(_vbRect) then begin
+                     _w := _vbRect.Width;
+                     _h := _vbRect.Height;
+                  end;
+
+                  // Utilisation du nom complet System.Math.Ceil pour éviter tout problème d'unité
+                  _bmp.SetSize(System.Math.Ceil(_w), System.Math.Ceil(_h));
+
+                  _bmp.SkiaDraw(procedure(const ACanvas: ISkCanvas)
+                  begin
+                     _skSvg.Svg.DOM.Render(ACanvas);
+                  end);
+               finally
+                  _skSvg.Free;
+               end;
+            end else begin
+               // --- CAS IMAGES TRADITIONNELLES (PNG, JPG, WebP) ---
+               var _skImg := TSkImage.MakeFromEncoded(_bytes);
+               if _skImg <> nil then begin
+                  _bmp.SetSize(_skImg.Width, _skImg.Height);
+                  _bmp.SkiaDraw(procedure(const ACanvas: ISkCanvas)
+                  begin
+                     ACanvas.DrawImage(_skImg, 0, 0);
+                  end);
+               end else begin
+                  _bmp.Free;
+                  _bmp := nil;
+               end;
+            end;
+
+            // --- TRANSMISSION DU BITMAP FINI À L'UI ---
+            if (_bmp <> nil) and (_bmp.Width > 0) and (_bmp.Height > 0) then begin
+               TThread.Queue( nil, procedure
+               begin
+                  FImageCache.AddOrSetValue( aKey, _bmp );
+                  FDownloadingKeys.Remove( aKey );
+                  ControlList1.Invalidate;
+               end );
+               Exit;
+            end else if _bmp <> nil then
+               _bmp.Free;
+
+         except
+            // Sécurité décodeur
+         end;
+      end;
+
+      // Nettoyage si échec
+      TThread.Queue( nil, procedure
+      begin
+         FDownloadingKeys.Remove( aKey );
+      end );
+   end );
 end;
 
-procedure TfrmRetrobatBrowser.SkPaintBoxMouseDown( Sender: TObject;
-                                                   Button: TMouseButton;
-                                                   Shift: TShiftState;
-                                                   X, Y: Integer );
+// GESTION DU CLIC SUR LA GRILLE
+procedure TfrmRetrobatBrowser.OnGameClick( Sender: TObject );
+var
+  ClickedComponent: TComponent;
+  iCol, iRow, iGlobalIndex: Integer;
+  _item: TJSONObject;
 begin
-   if ( Button <> mbLeft ) then Exit;
-   if ( FItems = nil ) then Exit;
-   var _col:= Trunc( X / cstTileWidth );
-   var _row:= Trunc( ( Y + FScrollY ) / cstTileHeight );
-   var _idx:= _row * FCols + _col;
-   if ( _idx < 0 ) or ( _idx >= FItems.Count ) then Exit;
-   if ( FCurrentSystem.IsEmpty ) then begin
-      var _item:= FItems.Items[_idx] as TJSONObject;
-      loadGames( _item.GetValue<string>( 'name', '' ) );
+   if FItems = nil then Exit;
+
+   ClickedComponent := Sender as TComponent;
+   iCol := ClickedComponent.Tag;                // Reçu via la config DFM (0, 1, 2 ou 3)
+   iRow := ControlList1.ItemIndex;              // Ligne sélectionnée
+
+   if iRow < 0 then Exit;
+
+   iGlobalIndex := ( iRow * NB_COLS ) + iCol;
+
+   if ( iGlobalIndex >= 0 ) and ( iGlobalIndex < FItems.Count ) then begin
+      _item := FItems.Items[iGlobalIndex] as TJSONObject;
+
+      if ( FCurrentSystem.IsEmpty ) then begin
+         // On clique sur un système -> charger la liste des jeux
+         loadGames( _item.GetValue<string>( 'name', '' ) );
+      end else begin
+         // On clique sur un jeu !
+         // Remplace la ligne 253 par ceci :
+         ShowMessage('Lancement du jeu : ' + _item.GetValue<string>( 'name', '' ));
+         // TODO: Insérer ici ton code d'exécution de jeu (ex: avec ShellExecute ou appel API)
+      end;
    end;
-   // TODO: launch game
 end;
 
 procedure TfrmRetrobatBrowser.btnBackClick( Sender: TObject );
 begin
-   clearAll;
-   FCurrentSystem:= '';
-   btnBack.Visible:= False;
-   lblBreadcrumb.Caption:= 'Systems';
    loadSystems;
 end;
 
@@ -345,7 +315,8 @@ begin
    var _json:= TJSONObject.ParseJSONValue( _response ) as TJSONArray;
    if ( _json = nil ) then Exit;
    FItems:= _json;
-   initLayout;
+
+   UpdateControlListCount;
 end;
 
 procedure TfrmRetrobatBrowser.loadGames( const aSystem: string );
@@ -360,7 +331,8 @@ begin
    var _json:= TJSONObject.ParseJSONValue( _response ) as TJSONArray;
    if ( _json = nil ) then Exit;
    FItems:= _json;
-   initLayout;
+
+   UpdateControlListCount;
 end;
 
 end.

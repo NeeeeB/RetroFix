@@ -1,8 +1,10 @@
 object frmRetrobatBrowser: TfrmRetrobatBrowser
   Left = 0
   Top = 0
+  BorderIcons = [biSystemMenu]
+  BorderStyle = bsSingle
   Caption = 'Retrobat Browser'
-  ClientHeight = 600
+  ClientHeight = 790
   ClientWidth = 900
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -13,19 +15,8 @@ object frmRetrobatBrowser: TfrmRetrobatBrowser
   Position = poOwnerFormCenter
   OnCreate = FormCreate
   OnDestroy = FormDestroy
-  OnMouseWheel = FormMouseWheel
-  OnResize = FormResize
   OnShow = FormShow
   TextHeight = 15
-  object SkPaintBox: TSkPaintBox
-    Left = 0
-    Top = 35
-    Width = 900
-    Height = 565
-    Align = alClient
-    OnMouseDown = SkPaintBoxMouseDown
-    OnDraw = SkPaintBoxDraw
-  end
   object pnlTop: TPanel
     Left = 0
     Top = 0
@@ -55,6 +46,113 @@ object frmRetrobatBrowser: TfrmRetrobatBrowser
       Caption = '< Back'
       TabOrder = 0
       Visible = False
+      OnClick = btnBackClick
+    end
+  end
+  object ControlList1: TControlList
+    Left = 0
+    Top = 35
+    Width = 900
+    Height = 755
+    Align = alClient
+    ItemHeight = 250
+    ItemMargins.Left = 0
+    ItemMargins.Top = 0
+    ItemMargins.Right = 0
+    ItemMargins.Bottom = 0
+    ParentColor = False
+    TabOrder = 1
+    OnBeforeDrawItem = ControlList1BeforeDrawItem
+    ExplicitHeight = 565
+    object imgCol0: TImage
+      Left = 15
+      Top = 10
+      Width = 190
+      Height = 190
+      Center = True
+      Proportional = True
+      Stretch = True
+      OnClick = OnGameClick
+    end
+    object lblCol0: TLabel
+      Left = 15
+      Top = 205
+      Width = 190
+      Height = 30
+      Alignment = taCenter
+      AutoSize = False
+      Caption = 'Game 0'
+      WordWrap = True
+      OnClick = OnGameClick
+    end
+    object imgCol1: TImage
+      Tag = 1
+      Left = 235
+      Top = 10
+      Width = 190
+      Height = 190
+      Center = True
+      Proportional = True
+      Stretch = True
+      OnClick = OnGameClick
+    end
+    object lblCol1: TLabel
+      Tag = 1
+      Left = 235
+      Top = 205
+      Width = 190
+      Height = 30
+      Alignment = taCenter
+      AutoSize = False
+      Caption = 'Game 1'
+      WordWrap = True
+      OnClick = OnGameClick
+    end
+    object imgCol2: TImage
+      Tag = 2
+      Left = 455
+      Top = 10
+      Width = 190
+      Height = 190
+      Center = True
+      Proportional = True
+      Stretch = True
+      OnClick = OnGameClick
+    end
+    object lblCol2: TLabel
+      Tag = 2
+      Left = 455
+      Top = 205
+      Width = 190
+      Height = 30
+      Alignment = taCenter
+      AutoSize = False
+      Caption = 'Game 2'
+      WordWrap = True
+      OnClick = OnGameClick
+    end
+    object imgCol3: TImage
+      Tag = 3
+      Left = 675
+      Top = 10
+      Width = 190
+      Height = 190
+      Center = True
+      Proportional = True
+      Stretch = True
+      OnClick = OnGameClick
+    end
+    object lblCol3: TLabel
+      Tag = 3
+      Left = 675
+      Top = 205
+      Width = 190
+      Height = 30
+      Alignment = taCenter
+      AutoSize = False
+      Caption = 'Game 3'
+      WordWrap = True
+      OnClick = OnGameClick
     end
   end
 end

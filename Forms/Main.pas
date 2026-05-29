@@ -129,7 +129,7 @@ begin
       end;
       readEsSettings( FSettings.retrobatPath, FSettings );
       FSystemExtensions:= readEsSystemsExtensions( FSettings.retrobatPath );
-//      checkESAvailability;
+      checkESAvailability;
    end;
 end;
 
@@ -270,7 +270,7 @@ begin
       readEsSettings( FSettings.retrobatPath, FSettings );
       FSystemExtensions.Free;
       FSystemExtensions:= readEsSystemsExtensions( FSettings.retrobatPath );
-//      checkESAvailability;
+      checkESAvailability;
    end;
 end;
 

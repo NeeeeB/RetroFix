@@ -25,7 +25,6 @@ object frmMain: TfrmMain
     Align = alClient
     BevelOuter = bvNone
     TabOrder = 0
-    ExplicitHeight = 303
     object gbxActions: TGroupBox
       AlignWithMargins = True
       Left = 3
@@ -36,7 +35,6 @@ object frmMain: TfrmMain
       Caption = 'Actions'
       Enabled = False
       TabOrder = 0
-      ExplicitHeight = 297
       object gbxBios: TGroupBox
         AlignWithMargins = True
         Left = 5
@@ -255,16 +253,17 @@ object frmMain: TfrmMain
     Align = alBottom
     BevelOuter = bvNone
     TabOrder = 2
-    ExplicitTop = 356
     object lblProgress: TLabel
       Left = 0
       Top = 8
-      Width = 32
-      Height = 15
+      Width = 545
+      Height = 22
       Align = alClient
       Alignment = taCenter
       Caption = 'Ready'
       Layout = tlCenter
+      ExplicitWidth = 32
+      ExplicitHeight = 15
     end
     object progressBar: TProgressBar
       AlignWithMargins = True
