@@ -33,6 +33,9 @@ type
                                             ARect: TRect; AState: TOwnerDrawState );
       procedure OnGameClick( Sender: TObject );
       procedure btnBackClick( Sender: TObject );
+    procedure ControlList1MouseMove(Sender: TObject; Shift: TShiftState; X,
+      Y: Integer);
+    procedure ControlList1MouseLeave(Sender: TObject);
    private
       FSettings: TSettings;
       FItems: TJSONArray;
@@ -128,12 +131,20 @@ var
   _item: TJSONObject;
   _name, _key: string;
   _bmp: TBitmap;
+  _mousePos: TPoint;
+  _localImgRect: TRect;
 begin
+   // Récupération de la position de la souris relative au ControlList
+   // On récupère la position de la souris relative à l'ÉLÉMENT SURVOLÉ, et pas à la grille globale
+//   _mousePos := ControlList1.ScreenToClient(Mouse.CursorPos);
+//   if ControlList1.HotItemIndex >= 0 then
+//      // On retire le décalage de défilement de la ligne pour tomber pile en face
+//      _mousePos.Y := _mousePos.Y - (ControlList1.HotItemIndex * ControlList1.ItemHeight);
+
    // AIndex représente le numéro de la ligne courante du TControlList
    for iCol := 0 to NB_COLS - 1 do begin
       iGlobalIndex := ( AIndex * NB_COLS ) + iCol;
 
-      // Si on dépasse le nombre total de jeux (fin de la grille vide)
       if iGlobalIndex >= FItems.Count then begin
          FImages[iCol].Visible := False;
          FLabels[iCol].Visible := False;
@@ -153,19 +164,65 @@ begin
       if FImageCache.TryGetValue( _key, _bmp ) then begin
          FImages[iCol].Picture.Bitmap := _bmp;
       end else begin
-         FImages[iCol].Picture := nil; // Vide (ou met une image "placeholder.png" par défaut)
+         FImages[iCol].Picture := nil;
 
-         // Lancement du téléchargement asynchrone si pas déjà en cours
          if not FDownloadingKeys.Contains( _key ) then begin
             FDownloadingKeys.Add( _key );
             loadImageAsync( _key,
                            IfThen( FCurrentSystem.IsEmpty, _name, FCurrentSystem ),
                            _item.GetValue<string>( 'id', '' ),
                            FCurrentSystem.IsEmpty,
-                           AIndex ); // On passe l'index de la ligne pour rafraîchir plus tard
+                           AIndex );
+         end;
+      end;
+
+      // --- LE CADRE PARFAIT : GÉOMÉTRIE + VERROU DE LIGNE ---
+
+      // Sécurité 1 : On interdit le dessin si la ligne en cours (AIndex) n'est pas la ligne survolée
+      if AIndex = ControlList1.HotItemIndex then
+      begin
+         _mousePos := ControlList1.ScreenToClient(Mouse.CursorPos);
+
+         // 2. Calcul du rectangle de l'image basé sur ARect (gère l'en-tête et le scroll)
+         _localImgRect := TRect.Create(
+            ARect.Left + FImages[iCol].Left,
+            ARect.Top + FImages[iCol].Top,
+            ARect.Left + FImages[iCol].Left + FImages[iCol].Width,
+            ARect.Top + FImages[iCol].Top + FImages[iCol].Height
+         );
+
+         // Sécurité 2 : On vérifie si la souris est bien dans cette colonne précise
+         if _localImgRect.Contains(_mousePos) then
+         begin
+            var _oldColor := ACanvas.Pen.Color;
+            var _oldWidth := ACanvas.Pen.Width;
+            var _oldStyle := ACanvas.Brush.Style;
+            try
+               ACanvas.Brush.Style := bsClear;
+               ACanvas.Pen.Color   := clHighlight; // Ton bleu
+               ACanvas.Pen.Width   := 3;
+
+               ACanvas.Rectangle(_localImgRect);
+            finally
+               ACanvas.Pen.Color   := _oldColor;
+               ACanvas.Pen.Width   := _oldWidth;
+               ACanvas.Brush.Style := _oldStyle;
+            end;
          end;
       end;
    end;
+end;
+
+procedure TfrmRetrobatBrowser.ControlList1MouseLeave(Sender: TObject);
+begin
+   ControlList1.Repaint;
+end;
+
+procedure TfrmRetrobatBrowser.ControlList1MouseMove(Sender: TObject;
+  Shift: TShiftState; X, Y: Integer);
+begin
+   // Force la liste à se repeindre dès que la souris bouge pour mettre à jour le cadre
+   ControlList1.Repaint;
 end;
 
 // TÉLÉCHARGEMENT ASYNCHRONE : Ne gèle plus l'UI
@@ -206,22 +263,36 @@ begin
                try
                   _skSvg.Svg.Source := _txt;
 
-                  // On récupère la taille définie dans le SVG
                   var _vbRect: TRectF;
                   var _w := 200.0;
                   var _h := 200.0;
 
+                  // 1. On fixe la taille du Bitmap de destination (ex: un carré de 200x200)
+                  _bmp.SetSize(200, 200);
+
+                  // 2. On calcule le ratio pour centrer le logo dans ce carré
                   if _skSvg.Svg.DOM.Root.TryGetViewBox(_vbRect) then begin
                      _w := _vbRect.Width;
                      _h := _vbRect.Height;
                   end;
 
-                  // Utilisation du nom complet System.Math.Ceil pour éviter tout problème d'unité
-                  _bmp.SetSize(System.Math.Ceil(_w), System.Math.Ceil(_h));
-
                   _bmp.SkiaDraw(procedure(const ACanvas: ISkCanvas)
                   begin
-                     _skSvg.Svg.DOM.Render(ACanvas);
+                     if (_w > 0) and (_h > 0) then begin
+                        // Calcul du facteur d'échelle en gardant les proportions (Min)
+                        var _scale := System.Math.Min(200 / _w, 200 / _h);
+                        // Calcul des décalages X et Y pour centrer le rendu dans le bitmap
+                        var _dx := (200 - _w * _scale) / 2;
+                        var _dy := (200 - _h * _scale) / 2;
+
+                        ACanvas.Save;
+                        ACanvas.Translate(_dx - _vbRect.Left * _scale, _dy - _vbRect.Top * _scale);
+                        ACanvas.Scale(_scale, _scale);
+                        _skSvg.Svg.DOM.Render(ACanvas);
+                        ACanvas.Restore;
+                     end else begin
+                        _skSvg.Svg.DOM.Render(ACanvas);
+                     end;
                   end);
                finally
                   _skSvg.Free;
@@ -230,10 +301,29 @@ begin
                // --- CAS IMAGES TRADITIONNELLES (PNG, JPG, WebP) ---
                var _skImg := TSkImage.MakeFromEncoded(_bytes);
                if _skImg <> nil then begin
-                  _bmp.SetSize(_skImg.Width, _skImg.Height);
+
+                  // 1. On récupère la taille cible du composant (ex: 150x200)
+                  // On met des valeurs par défaut au cas où le composant n'est pas encore initialisé
+                  var _targetW := 150;
+                  var _targetH := 200;
+
+                  // 2. On calcule le ratio pour que l'image garde ses proportions sans se déformer
+                  var _scale := System.Math.Min(_targetW / _skImg.Width, _targetH / _skImg.Height);
+                  var _finalW := System.Math.Ceil(_skImg.Width * _scale);
+                  var _finalH := System.Math.Ceil(_skImg.Height * _scale);
+
+                  // 3. On crée le bitmap à la taille EXACTE ajustée
+                  _bmp.SetSize(_finalW, _finalH);
+
                   _bmp.SkiaDraw(procedure(const ACanvas: ISkCanvas)
                   begin
-                     ACanvas.DrawImage(_skImg, 0, 0);
+                     // Fond transparent pour éviter les bords noirs/blancs chelous
+                     ACanvas.Clear($00000000);
+
+                     // On dessine le PNG en lui appliquant un échantillonnage linéaire de haute qualité
+                     var _destRect := TRectF.Create(0, 0, _finalW, _finalH);
+                     ACanvas.DrawImageRect(_skImg, _destRect,
+                        TSkSamplingOptions.Create(TSkFilterMode.Linear, TSkMipmapMode.Linear));
                   end);
                end else begin
                   _bmp.Free;

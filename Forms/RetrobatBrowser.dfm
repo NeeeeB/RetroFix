@@ -60,9 +60,14 @@ object frmRetrobatBrowser: TfrmRetrobatBrowser
     ItemMargins.Top = 0
     ItemMargins.Right = 0
     ItemMargins.Bottom = 0
+    ItemSelectionOptions.HotColorAlpha = 0
+    ItemSelectionOptions.SelectedColorAlpha = 0
+    ItemSelectionOptions.FocusedColorAlpha = 0
     ParentColor = False
     TabOrder = 1
     OnBeforeDrawItem = ControlList1BeforeDrawItem
+    OnMouseLeave = ControlList1MouseLeave
+    OnMouseMove = ControlList1MouseMove
     ExplicitHeight = 565
     object imgCol0: TImage
       Left = 15
@@ -71,7 +76,6 @@ object frmRetrobatBrowser: TfrmRetrobatBrowser
       Height = 190
       Center = True
       Proportional = True
-      Stretch = True
       OnClick = OnGameClick
     end
     object lblCol0: TLabel
@@ -93,7 +97,6 @@ object frmRetrobatBrowser: TfrmRetrobatBrowser
       Height = 190
       Center = True
       Proportional = True
-      Stretch = True
       OnClick = OnGameClick
     end
     object lblCol1: TLabel
@@ -116,7 +119,6 @@ object frmRetrobatBrowser: TfrmRetrobatBrowser
       Height = 190
       Center = True
       Proportional = True
-      Stretch = True
       OnClick = OnGameClick
     end
     object lblCol2: TLabel
@@ -139,7 +141,6 @@ object frmRetrobatBrowser: TfrmRetrobatBrowser
       Height = 190
       Center = True
       Proportional = True
-      Stretch = True
       OnClick = OnGameClick
     end
     object lblCol3: TLabel
