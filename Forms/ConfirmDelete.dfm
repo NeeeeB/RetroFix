@@ -3,7 +3,7 @@ object frmConfirmDelete: TfrmConfirmDelete
   Top = 0
   BorderStyle = bsDialog
   Caption = 'Confirm'
-  ClientHeight = 139
+  ClientHeight = 141
   ClientWidth = 350
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET

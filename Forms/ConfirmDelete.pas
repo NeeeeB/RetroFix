@@ -36,10 +36,6 @@ begin
    try
       _frm.lblMessage.Caption:= aMessage;
       _frm.chkDeleteRpcs3Data.Visible:= aHasPs3Games;
-      if ( aHasPs3Games ) then
-         _frm.ClientHeight:= 140
-      else
-         _frm.ClientHeight:= 120;
       Result:= ( _frm.ShowModal = mrOK );
       aDeleteOrphans:= Result and
                        ( _frm.chkDeleteOrphans.Checked );
