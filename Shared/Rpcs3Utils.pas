@@ -3,7 +3,10 @@
 interface
 
 uses
-   System.SysUtils, System.Classes, System.IOUtils,
+   System.SysUtils,
+   System.Classes,
+   System.IOUtils,
+   System.StrUtils,
    System.Generics.Collections;
 
 // Builds a dictionary normalized_title -> serial
@@ -17,17 +20,36 @@ function findRpcs3Serial( aMap: TDictionary<string, string>;
 
 implementation
 
-function normalizeTitle( const aTitle: string ): string;
+function cleanTitle( const aTitle: string ): string;
 begin
    var _result:= TStringBuilder.Create;
    try
       for var _c in aTitle.ToLower do
-         if ( CharInSet( _c, ['a'..'z', '0'..'9'] ) ) then
+         if ( CharInSet( _c, ['a'..'z', '0'..'9', ' '] ) ) then
             _result.Append( _c );
-      Result:= _result.ToString;
+      Result:= _result.ToString.Trim;
    finally
       _result.Free;
    end;
+end;
+
+function matchTitles( const aSfoTitle, aGameName: string ): Boolean;
+begin
+   var _sfoWords:= aSfoTitle.Split( [' '], TStringSplitOptions.ExcludeEmpty );
+   var _gameWords:= cleanTitle( aGameName ).Split( [' '], TStringSplitOptions.ExcludeEmpty );
+
+   if ( Length( _sfoWords ) = 0 ) or
+      ( Length( _gameWords ) = 0 ) then
+      Exit( False );
+
+   var _common:= 0;
+   for var _word in _sfoWords do begin
+      if ( MatchStr( _word, _gameWords ) ) then
+         Inc( _common );
+   end;
+
+   Result:= ( _common / Length( _sfoWords )  >= 0.8 ) and
+            ( _common / Length( _gameWords ) >= 0.8 );
 end;
 
 function readSfoTitle( const aSfoPath: string ): string;
@@ -123,9 +145,9 @@ begin
       var _sfoPath:= TPath.Combine( _serial, 'PARAM.SFO' );
       var _title  := readSfoTitle( _sfoPath );
       if ( _title.IsEmpty ) then Continue;
-      var _norm:= normalizeTitle( _title );
-      if ( not _norm.IsEmpty ) then
-         Result.AddOrSetValue( _norm, TPath.GetFileName( _serial ) );
+      var _clean:= cleanTitle( _title );
+      if ( not _clean.IsEmpty ) then
+         Result.AddOrSetValue( _clean, TPath.GetFileName( _serial ) );
    end;
 end;
 
@@ -136,7 +158,13 @@ begin
    aSerial:= '';
    if ( aMap = nil ) then
       Exit( False );
-   Result:= aMap.TryGetValue( normalizeTitle( aGameName ), aSerial );
+   for var _pair in aMap do begin
+      if ( matchTitles( _pair.Key, aGameName ) ) then begin
+         aSerial:= _pair.Value;
+         Exit( True );
+      end;
+   end;
+   Result:= False;
 end;
 
 end.
