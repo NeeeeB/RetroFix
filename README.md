@@ -38,6 +38,7 @@ RetroFix is a utility for [Retrobat](https://www.retrobat.org/) that scans your 
 - Add missing media files directly from the UI
 - Delete orphan media files directly from the UI (single or batch)
 - Remove missing ROM entries from gamelist, with optional deletion of resulting orphan media files
+- **PS3 support**: when deleting missing PS3/PSN ROMs, optionally also removes the corresponding RPCS3 game data folder (`saves\ps3\rpcs3\dev_hdd0\game\`), matched by game title via `PARAM.SFO` lookup
 - ROM hash verification (MD5 / CRC32 / SHA1) against values stored in the gamelist
 - Copy expected hash to clipboard on mismatch
 
