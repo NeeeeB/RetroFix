@@ -72,6 +72,7 @@ resourcestring
    rstApiDisabledOrUnavailable = 'Retrobat is not running or API is not enabled';
    rstFilenotFound = 'File not found: ';
    rstUnsupportedMediatype = 'Unsupported media type: ';
+   rstUnsupportedSystemsUnscraped = 'Unsupported systems (not scraped) : ';
 
 const
    {$INCLUDE 'screenscraper_credentials.inc'}

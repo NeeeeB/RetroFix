@@ -1569,6 +1569,9 @@ begin
    var _mediasDownloaded:= 0;
    var _mediasTotal:= 0;
    var _errors:= TStringList.Create;
+   var _unsupportedSystems:= TStringList.Create;
+   _unsupportedSystems.Duplicates:= dupIgnore;
+   _unsupportedSystems.Sorted:= True;
 
    FCancelScraping:= False;
    btnCancelScrape.Visible:= True;
@@ -1591,8 +1594,10 @@ begin
 
             Inc( _mediasTotal, _refsForRom.Count );
 
-            if ( not FSSSystemsMapping.ContainsKey( LowerCase( _ref0.systemName ) ) ) then
+            if ( not FSSSystemsMapping.ContainsKey( LowerCase( _ref0.systemName ) ) ) then begin
+               _unsupportedSystems.Add( _ref0.systemName );
                Continue;
+            end;
 
             var _systemId:= FSSSystemsMapping[ LowerCase( _ref0.systemName ) ];
 
@@ -1755,10 +1760,15 @@ begin
          if ( Assigned( FOnSummaryUpdate ) ) then
             FOnSummaryUpdate( Self );
          var _msg:= Format( rstScrapeMediaSummary, [_mediasDownloaded, _mediasTotal] );
+         if ( _unsupportedSystems.Count > 0 ) then
+            _msg:= _msg + sLineBreak + sLineBreak +
+                   rstUnsupportedSystemsUnscraped +
+                   _unsupportedSystems.CommaText;
          if ( _errors.Count > 0 ) then
-            _msg:= _msg + sLinebreak + _errors.Text;
+            _msg:= _msg + sLineBreak + sLineBreak + _errors.Text;
          ShowMessage( _msg );
          _errors.Free;
+         _unsupportedSystems.Free;
 
          // Free after UI update
          _grouped.Free;
