@@ -31,9 +31,9 @@ uses
   ESApi in 'Network\ESApi.pas',
   RetrobatBrowser in 'Forms\RetrobatBrowser.pas' {Form2},
   EsSystemsReader in 'Logic\EsSystemsReader.pas',
-  Rpcs3Utils in 'Shared\Rpcs3Utils.pas';
-
+  Rpcs3Utils in 'Shared\Rpcs3Utils.pas',
   Tools in 'Shared\Tools.pas';
+
 {$R *.res}
 
 begin
