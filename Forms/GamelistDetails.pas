@@ -185,7 +185,8 @@ uses
    ScreenScraperApi,
    GamelistParser,
    GamelistChecker,
-   ConfirmDelete;
+   ConfirmDelete,
+   Tools;
 
 {$R *.dfm}
 
@@ -1151,11 +1152,20 @@ begin
             end;
          end;
 
-         var _newResult:= parseGamelist( _r.romDir, _r.systemName );
-         _r.games:= _newResult.games;
-         _r.missingMedias:= _newResult.missingMedias;
-         _r.orphanMedias:= checkOrphanMedias( _r.romDir, _r.games );
-         _newResult.Free;
+         try
+            var _wasRepaired: Boolean;
+            var _newResult:= parseGamelist( _r.romDir, _r.systemName, _wasRepaired );
+            try
+               _r.games:= _newResult.games;
+               _r.missingMedias:= _newResult.missingMedias;
+               _r.orphanMedias:= checkOrphanMedias( _r.romDir, _r.games );
+            finally
+               _newResult.Free;
+            end;
+         except
+            on E: Exception do
+               logError( _r.systemName, TPath.Combine( _r.romDir, cstGamelistFile ), E );
+         end;
       end;
    finally
       _rpcs3Map.Free;
@@ -1473,11 +1483,21 @@ begin
                         _unscrapedList.Free;
                      end;
 
-                     var _newResult:= parseGamelist( _romDir, _ref.gamelistResult.systemName );
-                     _ref.gamelistResult.games:= _newResult.games;
-                     _ref.gamelistResult.missingMedias:= _newResult.missingMedias;
-                     _ref.gamelistResult.orphanMedias:= _newResult.orphanMedias;
-                     _newResult.Free;
+                     try
+                        var _wasRepaired: Boolean;
+                        var _newResult:= parseGamelist( _romDir, _ref.gamelistResult.systemName, _wasRepaired );
+                        try
+                           _ref.gamelistResult.games:= _newResult.games;
+                           _ref.gamelistResult.missingMedias:= _newResult.missingMedias;
+                           _ref.gamelistResult.orphanMedias:= _newResult.orphanMedias;
+                        finally
+                           _newResult.Free;
+                        end;
+                     except
+                        on E: Exception do
+                           logError( _ref.gamelistResult.systemName,
+                                     TPath.Combine( _romDir, cstGamelistFile ), E );
+                     end;
                      _ref.gamelistResult.totalRoms:= _savedTotalRoms;
                   end );
 
@@ -1723,11 +1743,21 @@ begin
                               _missingList.Free;
                            end;
 
-                           var _newResult:= parseGamelist( _romDir, _ref.gamelistResult.systemName );
-                           _ref.gamelistResult.games:= _newResult.games;
-                           _ref.gamelistResult.missingROMs:= _newResult.missingROMs;
-                           _ref.gamelistResult.orphanMedias:= _newResult.orphanMedias;
-                           _newResult.Free;
+                           try
+                              var _wasRepaired: Boolean;
+                              var _newResult:= parseGamelist( _romDir, _ref.gamelistResult.systemName, _wasRepaired );
+                              try
+                                 _ref.gamelistResult.games:= _newResult.games;
+                                 _ref.gamelistResult.missingROMs:= _newResult.missingROMs;
+                                 _ref.gamelistResult.orphanMedias:= _newResult.orphanMedias;
+                              finally
+                                 _newResult.Free;
+                              end;
+                           except
+                              on E: Exception do
+                                 logError( _ref.gamelistResult.systemName,
+                                           TPath.Combine( _romDir, cstGamelistFile ), E );
+                           end;
                         end );
                      end;
                   end;

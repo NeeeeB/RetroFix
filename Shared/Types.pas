@@ -96,6 +96,14 @@ type
       maxDownloadSpeed : Integer;
    end;
 
+   type
+   TGamelistError = record
+      systemName : string;
+      errorMsg   : string;
+   end;
+
+   TGamelistErrors = TArray<TGamelistError>;
+
    TSettings = class
    public
       retrobatPath  : string;

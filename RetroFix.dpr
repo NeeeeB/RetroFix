@@ -33,6 +33,7 @@ uses
   EsSystemsReader in 'Logic\EsSystemsReader.pas',
   Rpcs3Utils in 'Shared\Rpcs3Utils.pas';
 
+  Tools in 'Shared\Tools.pas';
 {$R *.res}
 
 begin

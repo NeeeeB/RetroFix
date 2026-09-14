@@ -73,6 +73,22 @@ resourcestring
    rstFilenotFound = 'File not found: ';
    rstUnsupportedMediatype = 'Unsupported media type: ';
    rstUnsupportedSystemsUnscraped = 'Unsupported systems (not scraped) : ';
+   rstScanErrors = '%d system(s) could not be analyzed: %s' + sLineBreak +
+                   'See %s for details.';
+   rstScanRepaired1 = '%d gamelist contains invalid characters and was repaired ' +
+                      'in memory to allow the scan:'+sLinebreak+sLinebreak+'%s' + sLineBreak + sLineBreak +
+                      'The file on disk is still invalid.'+sLineBreak+
+                      'It is recommended to fix it ' +
+                      'before using the other features, otherwise results may be ' +
+                      'inconsistent.'+sLineBreak+sLinebreak+
+                      'Details are available in Retrofix.log';
+   rstScanRepaired2 = '%d gamelists contains invalid characters and were repaired ' +
+                      'in memory to allow the scan:'+sLinebreak+sLinebreak+'%s' + sLineBreak + sLineBreak +
+                      'The file on disk are still invalid.'+sLineBreak+
+                      'It is recommended to fix them ' +
+                      'before using the other features, otherwise results may be ' +
+                      'inconsistent.'+sLineBreak+sLinebreak+
+                      'Details are available in Retrofix.log';
 
 const
    {$INCLUDE 'screenscraper_credentials.inc'}
@@ -82,6 +98,7 @@ const
    cstTileHeight = 120;
    cstLabelHeight = 20;
 
+   cstLogFile                = 'retrofix.log';
    cstSettingsFileName       = 'config.json';
    cstRetrobatExeFilename    = 'retrobat.exe';
    cstBiosFileName           = 'bios.json';

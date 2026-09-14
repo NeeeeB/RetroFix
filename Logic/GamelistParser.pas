@@ -4,10 +4,12 @@ interface
 
 uses
    System.Generics.Collections,
+   System.RegularExpressions,
    Types;
 
 function parseGamelist( const aRomDir: string;
-                        const aSystemName: string ): TGamelistResult;
+                        const aSystemName: string;
+                        out aWasRepaired: Boolean ): TGamelistResult;
 
 function addGameToGamelist( aSettings: TSettings;
                             const aRomDir: string;
@@ -18,17 +20,49 @@ function removeGamesFromGamelist( const aRomDir: string;
 
 function getFullNameFromShortName( const aShortName: string ): string;
 
+function isValidXmlChar( aCode: Integer ): Boolean;
+function lineOf( const aText: string; aPos: Integer ): Integer;
+function sanitizeXml( const aXml: string; out aClean, aDetails: string ): Boolean;
+
 implementation
 
 uses
    System.SysUtils,
    System.IOUtils,
    System.DateUtils,
+   System.Math,
    Constantes,
-   Neslib.Xml;
+   Neslib.Xml,
+   Tools;
+
+type
+   TXmlRefFilter = class
+      FFixes: Integer;
+      FPositions: TArray<Integer>;
+      function evaluate( const aMatch: TMatch ): string;
+   end;
+
+function TXmlRefFilter.evaluate( const aMatch: TMatch ): string;
+var
+   _code: Integer;
+begin
+   if ( aMatch.Groups[1].Success ) then
+      _code:= StrToIntDef( aMatch.Groups[1].Value, -1 )
+   else
+      _code:= StrToIntDef( '$'+aMatch.Groups[2].Value, -1 );
+
+   if ( isValidXmlChar( _code ) ) then
+      Result:= aMatch.Value
+   else begin
+      Result:= '';
+      Inc( FFixes );
+      FPositions:= FPositions+[aMatch.Index];
+   end;
+end;
 
 function parseGamelist( const aRomDir: string;
-                        const aSystemName: string ): TGamelistResult;
+                        const aSystemName: string;
+                        out aWasRepaired: Boolean ): TGamelistResult;
 
    function resolveRelativePath( const aBasePath, aRelativePath: string ): string;
    begin
@@ -39,92 +73,112 @@ function parseGamelist( const aRomDir: string;
    end;
 
 begin
+   aWasRepaired:= False;
    Result:= TGamelistResult.Create;
-   Result.systemName:= aSystemName;
-   Result.romDir:= aRomDir;
-   Result.totalRoms:= 0;
-   SetLength( Result.games, 0 );
-   SetLength( Result.missingROMs, 0 );
-   SetLength( Result.unscrapedROMs, 0 );
-   SetLength( Result.orphanMedias, 0 );
-   SetLength( Result.missingMedias, 0 );
-
-   var _gamelistPath:= TPath.Combine( aRomDir, cstGamelistFile );
-   if ( not TFile.Exists( _gamelistPath ) ) then
-      Exit;
-
-   var _doc:= TXmlDocument.Create;
-   _doc.Load( _gamelistPath );
-   var _root:= _doc.DocumentElement;
-   if ( _root.IsEmpty ) then
-      Exit;
-
-   var _games:= TList<TGameEntry>.Create;
    try
-      var _gameNode:= _root.FirstChild;
-      while ( not _gameNode.IsEmpty ) do begin
-         if ( _gameNode.NodeType = TXmlNodeType.Element ) and
-            ( _gameNode.Value = cstXmlGame ) then begin
+      Result.systemName:= aSystemName;
+      Result.romDir:= aRomDir;
+      Result.totalRoms:= 0;
+      SetLength( Result.games, 0 );
+      SetLength( Result.missingROMs, 0 );
+      SetLength( Result.unscrapedROMs, 0 );
+      SetLength( Result.orphanMedias, 0 );
+      SetLength( Result.missingMedias, 0 );
 
-            var _entry:= Default( TGameEntry );
+      var _gamelistPath:= TPath.Combine( aRomDir, cstGamelistFile );
+      if ( not TFile.Exists( _gamelistPath ) ) then
+         Exit;
 
-            // Extract id attribute
-            var _idAttr:= _gameNode.AttributeByName( cstXmlId );
-            if ( not _idAttr.Value.IsEmpty ) then
-               _entry.id:= _idAttr.Value;
+      var _doc: IXmlDocument:= TXmlDocument.Create;
+      try
+         _doc.Load( _gamelistPath );
+      except
+         on E: Exception do begin
+            var _cleanXml, _details: string;
+            if ( not sanitizeXml( TFile.ReadAllText( _gamelistPath, TEncoding.UTF8 ),
+                                  _cleanXml, _details ) ) then
+               raise;
 
-            // Parse child nodes
-            var _child:= _gameNode.FirstChild;
-            while ( not _child.IsEmpty ) do begin
-               if ( _child.NodeType = TXmlNodeType.Element ) then begin
-                  var _tag:= _child.Value;
-                  var _text:= _child.Text;
+            _doc:= TXmlDocument.Create;
+            _doc.Load( TEncoding.UTF8.GetBytes( _cleanXml ) );
+            aWasRepaired:= True;
+            logInfo( aSystemName, 'repaired in memory: '+_details );
+         end;
+      end;
+      var _root:= _doc.DocumentElement;
+      if ( _root.IsEmpty ) then
+         Exit;
 
-                  if ( _tag = cstXmlName ) then
-                     _entry.name:= _text
-                  else if ( _tag = cstXmlPath ) then begin
-                     if ( not _text.IsEmpty ) then
-                        _entry.romPath:= resolveRelativePath( aRomDir, _text );
-                  end else if ( _tag = cstXmlMD5 ) then
-                     _entry.md5:= _text
-                  else if ( _tag = cstXmlHash ) then _entry.crc32:= _text
-                  else if ( _tag = cstXmlDesc ) then _entry.desc:= _text
-                  else if ( _tag = cstXmlGenre ) then _entry.genre:= _text
-                  else if ( _tag = cstXmlRating ) then _entry.rating:= _text
-                  else if ( _tag = cstXmlReleaseDate ) then _entry.releaseDate:= _text
-                  else if ( _tag = cstXmlDeveloper ) then _entry.developer:= _text
-                  else if ( _tag = cstXmlPublisher ) then _entry.publisher:= _text
-                  else if ( _tag = cstXmlFamily ) then _entry.family:= _text
-                  else if ( _tag = cstXmlArcadeSystem ) then _entry.arcadeSystem:= _text
-                  else if ( _tag = cstXmlPlayers ) then _entry.players:= _text
-                  else if ( _tag = cstXmlLang ) then _entry.lang:= _text
-                  else if ( _tag = cstXmlRegion ) then _entry.region:= _text
-                  else begin
-                     for var mt:= Low( TMediaType ) to High( TMediaType ) do begin
-                        if ( _tag = cstMediaTypeTags[mt] ) and
-                           ( not _text.IsEmpty ) then begin
-                           var _media: TGameMedia;
-                           _media.mediaType:= mt;
-                           _media.path:= resolveRelativePath( aRomDir, _text );
-                           _media.exists:= TFile.Exists( _media.path );
-                           _entry.medias:= _entry.medias+[_media];
-                           _entry.isScraped:= True;
-                           Break;
+      var _games:= TList<TGameEntry>.Create;
+      try
+         var _gameNode:= _root.FirstChild;
+         while ( not _gameNode.IsEmpty ) do begin
+            if ( _gameNode.NodeType = TXmlNodeType.Element ) and
+               ( _gameNode.Value = cstXmlGame ) then begin
+
+               var _entry:= Default( TGameEntry );
+
+               // Extract id attribute
+               var _idAttr:= _gameNode.AttributeByName( cstXmlId );
+               if ( not _idAttr.Value.IsEmpty ) then
+                  _entry.id:= _idAttr.Value;
+
+               // Parse child nodes
+               var _child:= _gameNode.FirstChild;
+               while ( not _child.IsEmpty ) do begin
+                  if ( _child.NodeType = TXmlNodeType.Element ) then begin
+                     var _tag:= _child.Value;
+                     var _text:= _child.Text;
+
+                     if ( _tag = cstXmlName ) then
+                        _entry.name:= _text
+                     else if ( _tag = cstXmlPath ) then begin
+                        if ( not _text.IsEmpty ) then
+                           _entry.romPath:= resolveRelativePath( aRomDir, _text );
+                     end else if ( _tag = cstXmlMD5 ) then
+                        _entry.md5:= _text
+                     else if ( _tag = cstXmlHash ) then _entry.crc32:= _text
+                     else if ( _tag = cstXmlDesc ) then _entry.desc:= _text
+                     else if ( _tag = cstXmlGenre ) then _entry.genre:= _text
+                     else if ( _tag = cstXmlRating ) then _entry.rating:= _text
+                     else if ( _tag = cstXmlReleaseDate ) then _entry.releaseDate:= _text
+                     else if ( _tag = cstXmlDeveloper ) then _entry.developer:= _text
+                     else if ( _tag = cstXmlPublisher ) then _entry.publisher:= _text
+                     else if ( _tag = cstXmlFamily ) then _entry.family:= _text
+                     else if ( _tag = cstXmlArcadeSystem ) then _entry.arcadeSystem:= _text
+                     else if ( _tag = cstXmlPlayers ) then _entry.players:= _text
+                     else if ( _tag = cstXmlLang ) then _entry.lang:= _text
+                     else if ( _tag = cstXmlRegion ) then _entry.region:= _text
+                     else begin
+                        for var mt:= Low( TMediaType ) to High( TMediaType ) do begin
+                           if ( _tag = cstMediaTypeTags[mt] ) and
+                              ( not _text.IsEmpty ) then begin
+                              var _media: TGameMedia;
+                              _media.mediaType:= mt;
+                              _media.path:= resolveRelativePath( aRomDir, _text );
+                              _media.exists:= TFile.Exists( _media.path );
+                              _entry.medias:= _entry.medias+[_media];
+                              _entry.isScraped:= True;
+                              Break;
+                           end;
                         end;
                      end;
                   end;
+                  _child:= _child.NextSibling;
                end;
-               _child:= _child.NextSibling;
+
+               _games.Add( _entry );
             end;
-
-            _games.Add( _entry );
+            _gameNode:= _gameNode.NextSibling;
          end;
-         _gameNode:= _gameNode.NextSibling;
-      end;
 
-      Result.games:= _games.ToArray;
-   finally
-      _games.Free;
+         Result.games:= _games.ToArray;
+      finally
+         _games.Free;
+      end;
+   except
+      Result.Free;
+      raise;
    end;
 end;
 
@@ -263,6 +317,82 @@ begin
       if ( _rec.shortName = aShortName ) then
          Exit( _rec.fullName );
    end;
+end;
+
+function isValidXmlChar( aCode: Integer ): Boolean;
+begin
+   Result := ( aCode = $09 ) or ( aCode = $0A ) or ( aCode = $0D ) or
+             ( ( aCode >= $20 ) and ( aCode <= $D7FF ) ) or
+             ( ( aCode >= $E000 ) and ( aCode <= $FFFD ) );
+end;
+
+function lineOf( const aText: string; aPos: Integer ): Integer;
+begin
+   Result:= 1;
+   for var ii:= 1 to Min( aPos, Length( aText ) ) do
+      if ( aText[ii] = #10 ) then
+         Inc( Result );
+end;
+
+function sanitizeXml( const aXml: string; out aClean, aDetails: string ): Boolean;
+begin
+   var _nCtrl:= 0;
+   var _nRefs:= 0;
+   var _nAmp := 0;
+   aDetails:= '';
+
+   // 1. caractères de contrôle bruts
+   var _sb:= TStringBuilder.Create( Length( aXml ) );
+   try
+      for var _c in aXml do begin
+         var _code:= Ord( _c );
+         if isValidXmlChar( _code ) or
+            ( ( _code >= $D800 ) and ( _code <= $DFFF ) ) then
+            _sb.Append( _c )
+         else
+            Inc( _nCtrl );
+      end;
+      aClean:= _sb.ToString;
+   finally
+      _sb.Free;
+   end;
+
+   // 2. références numériques invalides
+   var _refLines: TArray<string>;
+   var _filter:= TXmlRefFilter.Create;
+   try
+      var _source:= aClean;
+      aClean:= TRegEx.Replace( aClean, '&#(?:(\d+)|[xX]([0-9a-fA-F]+));',
+                               _filter.evaluate );
+      _nRefs:= _filter.fFixes;
+      for var _p in _filter.fPositions do
+         _refLines:= _refLines+[IntToStr( lineOf( _source, _p ) )];
+   finally
+      _filter.Free;
+   end;
+
+   // 3. & nu
+   var _ampLines: TArray<string>;
+   var _rx:= TRegEx.Create( '&(?!(?:amp|lt|gt|quot|apos|#\d+|#[xX][0-9a-fA-F]+);)' );
+   for var _m in _rx.Matches( aClean ) do begin
+      Inc( _nAmp );
+      _ampLines:= _ampLines+[IntToStr( lineOf( aClean, _m.Index ) )];
+   end;
+   if ( _nAmp > 0 ) then
+      aClean:= _rx.Replace( aClean, '&amp;' );
+
+   // détail lisible
+   if ( _nCtrl > 0 ) then
+      aDetails:= aDetails+Format( '%d control character(s); ', [_nCtrl] );
+   if ( _nRefs > 0 ) then
+      aDetails:= aDetails+Format( '%d invalid character reference(s) at line(s) %s; ',
+                                  [_nRefs, string.Join( ', ', _refLines )] );
+   if ( _nAmp > 0 ) then
+      aDetails:= aDetails+Format( '%d unescaped ampersand(s) at line(s) %s; ',
+                                  [_nAmp, string.Join( ', ', _ampLines )] );
+   aDetails:= aDetails.TrimRight( [' ', ';'] );
+
+   Result:= ( _nCtrl+_nRefs+_nAmp > 0 );
 end;
 
 end.

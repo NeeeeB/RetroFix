@@ -96,6 +96,8 @@ implementation
 
 uses
    System.IOUtils,
+   System.UITypes,
+   System.StrUtils,
    System.Threading,
    Rest.JSON,
    BiosExtractor,
@@ -413,6 +415,8 @@ procedure TfrmMain.btnScanGamelistsClick( Sender: TObject );
 begin
    FStopWatch:= TStopwatch.StartNew;
    Screen.Cursor:= crHourGlass;
+   var _errors: TGamelistErrors;
+   var _repaired: TArray<string>;
    try
       btnScanGamelists.Enabled:= False;
       btnGamelistScanDetails.Enabled:= False;
@@ -421,6 +425,7 @@ begin
       try
          var _romsDir:= TPath.Combine( FSettings.retrobatPath, cstRomsFolder );
          FGamelistResults.Free;
+         FGamelistResults:= nil;
          var _biosJsonPath:= getBiosJsonPath;
          if ( not TFile.Exists( _biosJsonPath ) ) then begin
             var _json, _err: string;
@@ -428,7 +433,8 @@ begin
                TFile.WriteAllText( _biosJsonPath, _json, TEncoding.UTF8 );
          end;
 
-         FGamelistResults:= checkGamelists( _romsDir, _biosJsonPath, FSystemExtensions, onGamelistProgress );
+         FGamelistResults:= checkGamelists( _romsDir, _biosJsonPath, FSystemExtensions,
+                                            onGamelistProgress, _errors, _repaired );
          displayGamelistSummary( computeGamelistSummary( FGamelistResults ) );
          btnGamelistScanDetails.Enabled:= True;
       finally
@@ -439,6 +445,22 @@ begin
       progressBar.Position:= 0;
       FStopWatch.Stop;
       lblProgress.Caption:= Format( rstStopWatchStr, [FStopWatch.Elapsed.TotalSeconds] );
+   end;
+
+   if ( Length( _errors ) > 0 ) then begin
+      var _names: TArray<string>;
+      for var _e in _errors do
+         _names:= _names+[_e.systemName];
+      MessageDlg( Format( rstScanErrors,
+                          [Length( _errors ), string.Join( ', ', _names ), cstLogFile] ),
+                  mtWarning, [mbOK], 0 );
+   end;
+
+   var _numRepairs:= Length( _repaired );
+   if ( _numRepairs > 0 ) then begin
+      MessageDlg( Format( IfThen( ( _numRepairs = 1 ), rstScanRepaired1, rstScanRepaired2 ),
+                          [Length( _repaired ), string.Join( sLineBreak, _repaired )] ),
+                  mtWarning, [mbOK], 0 );
    end;
 end;
 

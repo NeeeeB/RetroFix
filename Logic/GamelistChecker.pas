@@ -13,7 +13,9 @@ type
 function checkGamelists( const aRomsDir: string;
                          const aBiosJsonPath: string;
                          aSystemExtensions: TDictionary<string, TArray<string>>;
-                         aOnProgress: TGamelistProgressCallback ): TObjectList<TGamelistResult>;
+                         aOnProgress: TGamelistProgressCallback;
+                         out aErrors: TGamelistErrors;
+                         out aRepaired: TArray<string> ): TObjectList<TGamelistResult>;
 
 function checkOrphanMedias( const aRomDir: string;
                             const aGames: TArray<TGameEntry> ): TArray<string>;
@@ -26,7 +28,8 @@ uses
    System.StrUtils,
    BiosParser,
    Constantes,
-   GamelistParser;
+   GamelistParser,
+   Tools;
 
 function checkOrphanMedias( const aRomDir: string;
                              const aGames: TArray<TGameEntry> ): TArray<string>;
@@ -73,7 +76,9 @@ end;
 function checkGamelists( const aRomsDir: string;
                          const aBiosJsonPath: string;
                          aSystemExtensions: TDictionary<string, TArray<string>>;
-                         aOnProgress: TGamelistProgressCallback ): TObjectList<TGamelistResult>;
+                         aOnProgress: TGamelistProgressCallback;
+                         out aErrors: TGamelistErrors;
+                         out aRepaired: TArray<string> ): TObjectList<TGamelistResult>;
 
    function getRomFiles( const aDir: string;
                          const aBiosFiles: TArray<string>;
@@ -114,6 +119,8 @@ function checkGamelists( const aRomsDir: string;
 
 begin
    Result:= TObjectList<TGamelistResult>.Create( True );
+   aErrors:= nil;
+   aRepaired:= nil;
    if ( not TDirectory.Exists( aRomsDir ) ) then
          Exit;
 
@@ -132,94 +139,111 @@ begin
    for var ii:= 0 to Pred( _total ) do begin
       var _systemDir:= _systemDirs[ii];
       var _systemName:= TPath.GetFileName( _systemDir );
-
-      if ( Assigned( aOnProgress ) ) then
-         aOnProgress( _systemName, Succ( ii ), _total );
-
-      var _validExts: TArray<string>;
-      if ( aSystemExtensions <> nil ) then
-         aSystemExtensions.TryGetValue( LowerCase( _systemName ), _validExts );
-
       var _gamelistPath:= TPath.Combine( _systemDir, cstGamelistFile );
-      if ( not TFile.Exists( _gamelistPath ) ) then begin
-         var _romFiles:= getRomFiles( _systemDir, _biosFiles, _validExts );
-         if ( Length( _romFiles ) > 0 ) then begin
-            var _result:= TGamelistResult.Create;
-            _result.systemName:= _systemName;
-            _result.romDir:= _systemDir;
-            _result.totalRoms:= Length( _romFiles );
-            _result.unscrapedROMs:= _romFiles;
-            Result.Add( _result );
-         end;
-         Continue;
-      end;
-
-      var _result:= parseGamelist( _systemDir, _systemName );
-
-      // Build dictionary of referenced ROM paths for O(1) lookup
-      var _referencedROMs:= TDictionary<string, Boolean>.Create;
+      var _result: TGamelistResult:= nil;
       try
-         for var _game in _result.games do
-            if ( not _game.romPath.IsEmpty ) then
-               _referencedROMs.TryAdd( LowerCase( _game.romPath ), True );
+         if ( Assigned( aOnProgress ) ) then
+            aOnProgress( _systemName, Succ( ii ), _total );
 
-         // Check missing ROMs
-         var _missingROMs:= TList<string>.Create;
+         var _validExts: TArray<string>;
+         if ( aSystemExtensions <> nil ) then
+            aSystemExtensions.TryGetValue( LowerCase( _systemName ), _validExts );
+
+         if ( not TFile.Exists( _gamelistPath ) ) then begin
+            var _romFiles:= getRomFiles( _systemDir, _biosFiles, _validExts );
+            if ( Length( _romFiles ) > 0 ) then begin
+               _result:= TGamelistResult.Create;
+               _result.systemName:= _systemName;
+               _result.romDir:= _systemDir;
+               _result.totalRoms:= Length( _romFiles );
+               _result.unscrapedROMs:= _romFiles;
+               Result.Add( _result );
+               _result:= nil;
+            end;
+            Continue;
+         end;
+
+         var _wasRepaired: Boolean;
+         _result:= parseGamelist( _systemDir, _systemName, _wasRepaired );
+         if ( _wasRepaired ) then
+            aRepaired:= aRepaired+[_systemName];
+
+         // Build dictionary of referenced ROM paths for O(1) lookup
+         var _referencedROMs:= TDictionary<string, Boolean>.Create;
          try
             for var _game in _result.games do
-               if ( not _game.romPath.IsEmpty ) and
-                  ( not TFile.Exists( _game.romPath ) ) then
-                  _missingROMs.Add( _game.romPath );
-            _result.missingROMs:= _missingROMs.ToArray;
-         finally
-            _missingROMs.Free;
-         end;
+               if ( not _game.romPath.IsEmpty ) then
+                  _referencedROMs.TryAdd( LowerCase( _game.romPath ), True );
 
-         // Count total ROMs on disk
-         var _romFiles:= getRomFiles( _systemDir, _biosFiles, _validExts );
-         _result.totalRoms:= Length( _romFiles );
-
-         // Check unscraped ROMs
-         var _unscrapedROMs:= TList<string>.Create;
-         try
-            for var _romFile in _romFiles do begin
-               if ( not _referencedROMs.ContainsKey( LowerCase( _romFile ) ) ) then
-                  _unscrapedROMs.Add( _romFile );
+            // Check missing ROMs
+            var _missingROMs:= TList<string>.Create;
+            try
+               for var _game in _result.games do
+                  if ( not _game.romPath.IsEmpty ) and
+                     ( not TFile.Exists( _game.romPath ) ) then
+                     _missingROMs.Add( _game.romPath );
+               _result.missingROMs:= _missingROMs.ToArray;
+            finally
+               _missingROMs.Free;
             end;
-            _result.unscrapedROMs:= _unscrapedROMs.ToArray;
+
+            // Count total ROMs on disk
+            var _romFiles:= getRomFiles( _systemDir, _biosFiles, _validExts );
+            _result.totalRoms:= Length( _romFiles );
+
+            // Check unscraped ROMs
+            var _unscrapedROMs:= TList<string>.Create;
+            try
+               for var _romFile in _romFiles do begin
+                  if ( not _referencedROMs.ContainsKey( LowerCase( _romFile ) ) ) then
+                     _unscrapedROMs.Add( _romFile );
+               end;
+               _result.unscrapedROMs:= _unscrapedROMs.ToArray;
+            finally
+               _unscrapedROMs.Free;
+            end;
          finally
-            _unscrapedROMs.Free;
+            _referencedROMs.Free;
          end;
-      finally
-         _referencedROMs.Free;
-      end;
 
-      // Build dictionary of referenced media paths for O(1) lookup
-      var _referencedMedias:= TDictionary<string, Boolean>.Create;
-      try
-         for var _game in _result.games do
-            for var _media in _game.medias do
-               _referencedMedias.TryAdd( LowerCase( _media.path ), True );
-
-         // Check missing medias
-         var _missingMedias:= TList<string>.Create;
+         // Build dictionary of referenced media paths for O(1) lookup
+         var _referencedMedias:= TDictionary<string, Boolean>.Create;
          try
             for var _game in _result.games do
                for var _media in _game.medias do
-                  if ( not _media.exists ) then
-                     _missingMedias.Add( _media.path );
-            _result.missingMedias:= _missingMedias.ToArray;
+                  _referencedMedias.TryAdd( LowerCase( _media.path ), True );
+
+            // Check missing medias
+            var _missingMedias:= TList<string>.Create;
+            try
+               for var _game in _result.games do
+                  for var _media in _game.medias do
+                     if ( not _media.exists ) then
+                        _missingMedias.Add( _media.path );
+               _result.missingMedias:= _missingMedias.ToArray;
+            finally
+               _missingMedias.Free;
+            end;
+
+            // Check orphan medias
+            _result.orphanMedias:= checkOrphanMedias( _systemDir, _result.games );
          finally
-            _missingMedias.Free;
+            _referencedMedias.Free;
          end;
 
-         // Check orphan medias
-         _result.orphanMedias:= checkOrphanMedias( _systemDir, _result.games );
-      finally
-         _referencedMedias.Free;
-      end;
+         Result.Add( _result );
+         _result:= nil;
+      except
+         on E: Exception do begin
+            _result.Free;
+            logError( _systemName, _gamelistPath, E );
 
-      Result.Add( _result );
+            var _err: TGamelistError;
+            _err.systemName:= _systemName;
+            _err.errorMsg:= E.Message;
+            aErrors:= aErrors+[_err];
+         end;
+      end;
    end;
 end;
 
