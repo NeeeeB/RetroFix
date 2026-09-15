@@ -89,6 +89,12 @@ resourcestring
                       'before using the other features, otherwise results may be ' +
                       'inconsistent.'+sLineBreak+sLinebreak+
                       'Details are available in Retrofix.log';
+   rstUnknownSystems1 = '%d folder does not match any system declared in ' +
+                        'es_systems.cfg:' + sLineBreak + sLineBreak + '%s' + sLineBreak + sLineBreak +
+                        'It is ignored by EmulationStation, so it was excluded from the scan.';
+   rstUnknownSystems2 = '%d folders do not match any system declared in ' +
+                        'es_systems.cfg:' + sLineBreak + sLineBreak + '%s' + sLineBreak + sLineBreak +
+                        'They are ignored by EmulationStation, so they were excluded from the scan.';
 
 const
    {$INCLUDE 'screenscraper_credentials.inc'}
@@ -280,6 +286,9 @@ const
    cstESApiRemoveGames  = '/removegames';
 
    cstExcludedRomExtensions: TArray<string> = ['.xml', '.ini', '.m3u', '.txt', '.dat', '.cfg', '.log', '.pak'];
+   // Folders that live inside a system folder but never contain ROMs.
+   // Compared in lower case against the folder name only.
+   cstExcludedRomFolders: TArray<string> = ['_retrobat_metadata_report'];
 
    cstBiosAlternativePaths: array[0..2] of TBiosAlternativePath =
       ( ( systemKey: 'neogeo'; fileName: 'neogeo.zip'; altRelPath: 'roms\neogeo\neogeo.zip' ),

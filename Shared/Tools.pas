@@ -8,6 +8,7 @@ uses
 procedure writeLog( const aLine: string );
 procedure logInfo( const aSystemName, aMessage: string );
 procedure logError( const aSystemName, aGamelistPath: string; aException: Exception );
+function normalizePath( const aPath: string ): string;
 
 implementation
 
@@ -36,6 +37,18 @@ end;
 procedure logError( const aSystemName, aGamelistPath: string; aException: Exception );
 begin
    writeLog( Format( 'ERROR | %s | %s: %s | %s', [aSystemName, aException.ClassName, aException.Message, aGamelistPath] ) );
+end;
+
+function normalizePath( const aPath: string ): string;
+begin
+   if ( aPath.IsEmpty ) then
+      Exit( '' );
+   try
+      Result:= TPath.GetFullPath( aPath.Replace( '/', '\' ) );
+   except
+      // chemin syntaxiquement invalide : on renvoie l'entrée telle quelle
+      Result:= aPath;
+   end;
 end;
 
 end.

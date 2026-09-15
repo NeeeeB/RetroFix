@@ -417,6 +417,7 @@ begin
    Screen.Cursor:= crHourGlass;
    var _errors: TGamelistErrors;
    var _repaired: TArray<string>;
+   var _unknownSystems: TArray<string>;
    try
       btnScanGamelists.Enabled:= False;
       btnGamelistScanDetails.Enabled:= False;
@@ -434,7 +435,7 @@ begin
          end;
 
          FGamelistResults:= checkGamelists( _romsDir, _biosJsonPath, FSystemExtensions,
-                                            onGamelistProgress, _errors, _repaired );
+                                            onGamelistProgress, _errors, _repaired, _unknownSystems );
          displayGamelistSummary( computeGamelistSummary( FGamelistResults ) );
          btnGamelistScanDetails.Enabled:= True;
       finally
@@ -461,6 +462,13 @@ begin
       MessageDlg( Format( IfThen( ( _numRepairs = 1 ), rstScanRepaired1, rstScanRepaired2 ),
                           [Length( _repaired ), string.Join( sLineBreak, _repaired )] ),
                   mtWarning, [mbOK], 0 );
+   end;
+
+   var _numUnknown:= Length( _unknownSystems );
+   if ( _numUnknown > 0 ) then begin
+      MessageDlg( Format( IfThen( ( _numUnknown = 1 ), rstUnknownSystems1, rstUnknownSystems2 ),
+                          [_numUnknown, string.Join( sLineBreak, _unknownSystems )] ),
+                  mtInformation, [mbOK], 0 );
    end;
 end;
 
@@ -564,7 +572,6 @@ procedure TfrmMain.onBiosRescan( Sender: TObject; const aOptions: TScanOptions )
 begin
    FStopWatch:= TStopwatch.StartNew;
    // Use options from detail form for this scan, without modifying main form checkboxes
-   var _biosDir:= TPath.Combine( FSettings.retrobatPath, cstBios );
    var _jsonPath:= getBiosJsonPath;
 
    if ( aOptions.forceExtract ) or
@@ -577,7 +584,7 @@ begin
 
    var _json:= TFile.ReadAllText( _jsonPath, TEncoding.UTF8 );
    var _entries:= parseBiosJson( _json );
-   FBiosResults:= checkBios( _biosDir, _entries, aOptions.strictMode, onBiosProgress );
+   FBiosResults:= checkBios( FSettings.retrobatPath, _entries, aOptions.strictMode, onBiosProgress );
    displaySummary( computeSummary( FBiosResults ) );
    FBiosDetails.setResults( FBiosResults );
    FStopWatch.Stop;

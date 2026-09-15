@@ -69,7 +69,7 @@ function parseGamelist( const aRomDir: string;
       var _clean:= aRelativePath;
       if ( _clean.StartsWith( './' ) ) then
          _clean:= _clean.Substring( 2 );
-      Result:= TPath.Combine( aBasePath, _clean.Replace( '/', '\' ) );
+      Result:= normalizePath( TPath.Combine( aBasePath, _clean.Replace( '/', '\' ) ) );
    end;
 
 begin
@@ -337,8 +337,8 @@ end;
 function sanitizeXml( const aXml: string; out aClean, aDetails: string ): Boolean;
 begin
    var _nCtrl:= 0;
-   var _nRefs:= 0;
    var _nAmp := 0;
+   var _nRefs: Integer;
    aDetails:= '';
 
    // 1. caractères de contrôle bruts
@@ -364,8 +364,8 @@ begin
       var _source:= aClean;
       aClean:= TRegEx.Replace( aClean, '&#(?:(\d+)|[xX]([0-9a-fA-F]+));',
                                _filter.evaluate );
-      _nRefs:= _filter.fFixes;
-      for var _p in _filter.fPositions do
+      _nRefs:= _filter.FFixes;
+      for var _p in _filter.FPositions do
          _refLines:= _refLines+[IntToStr( lineOf( _source, _p ) )];
    finally
       _filter.Free;

@@ -1087,6 +1087,20 @@ begin
             _romPaths:= _romPaths + [_ref.romPath];
          removeGamesFromGamelist( _r.romDir, _romPaths );
 
+         // Collect medias declared by the removed games, BEFORE _r.games is rebuilt
+         var _mediasToDelete: TArray<string>;
+         if ( _deleteOrphans ) then begin
+            for var _g in _r.games do begin
+               for var _p in _romPaths do begin
+                  if ( _g.romPath = _p ) then begin
+                     for var _m in _g.medias do
+                        _mediasToDelete:= _mediasToDelete + [_m.path];
+                     Break;
+                  end;
+               end;
+            end;
+         end;
+
          var _gamesList:= TList<TGameEntry>.Create;
          try
             for var _g in _r.games do begin
@@ -1124,17 +1138,11 @@ begin
          end;
 
          if ( _deleteOrphans ) then begin
-            for var _ref in _refs do begin
-               var _romName:= TPath.GetFileNameWithoutExtension( _ref.romPath );
-               for var _subDir in [cstImages, cstVideos, cstManuals] do begin
-                  var _path:= TPath.Combine( _r.romDir, _subDir );
-                  if ( TDirectory.Exists( _path ) ) then begin
-                     for var _f in TDirectory.GetFiles( _path ) do begin
-                        if ( TPath.GetFileName( _f ).StartsWith( _romName ) ) then
-                           TFile.Delete( _f );
-                     end;
-                  end;
-               end;
+            for var _p in _mediasToDelete do begin
+               if ( not TFile.Exists( _p ) ) then Continue;
+               // never delete outside the system folder (shared media via ../)
+               if ( not _p.StartsWith( IncludeTrailingPathDelimiter( _r.romDir ), True ) ) then Continue;
+               TFile.Delete( _p );
             end;
          end;
 
