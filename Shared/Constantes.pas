@@ -56,6 +56,14 @@ resourcestring
    rstOpenDlgCaption = 'Select media file for';
    rstWillBeSavedAs = '(will be saved as:';
    rstDeleteOrphans = 'Delete %d selected orphan file(s) ?';
+   rstBackupQuestion = 'Back up the %d file(s) before deleting?'+sLineBreak+sLineBreak+
+                       'Yes: choose a folder, files are moved there.'+sLineBreak+sLineBreak+
+                       'No: files are deleted permanently.'+sLineBreak+sLineBreak+
+                       'Cancel: nothing is deleted.';
+   rstBackupSelectFolder = 'Select the backup folder';
+   rstBackupFailed = '%d file(s) could not be backed up and were NOT deleted:' +
+                     sLineBreak + sLineBreak + '%s';
+   rstBackupInRoms = 'The backup folder cannot be inside the roms folder.';
    rstSSUsername = 'ScreenScraper username:';
    rstSSPassword = 'ScreenScraper password:';
    rstSSCredentialsMissing = 'ScreenScraper credentials not found. Scraping features will not be available.';
@@ -91,10 +99,10 @@ resourcestring
                       'Details are available in Retrofix.log';
    rstUnknownSystems1 = '%d folder does not match any system declared in ' +
                         'es_systems.cfg:' + sLineBreak + sLineBreak + '%s' + sLineBreak + sLineBreak +
-                        'It is ignored by EmulationStation, so it was excluded from the scan.';
+                        'It was excluded from the unscraped ROMs detection.';
    rstUnknownSystems2 = '%d folders do not match any system declared in ' +
                         'es_systems.cfg:' + sLineBreak + sLineBreak + '%s' + sLineBreak + sLineBreak +
-                        'They are ignored by EmulationStation, so they were excluded from the scan.';
+                        'They were excluded from the unscraped ROMs detection.';
 
 const
    {$INCLUDE 'screenscraper_credentials.inc'}
@@ -289,6 +297,9 @@ const
    // Folders that live inside a system folder but never contain ROMs.
    // Compared in lower case against the folder name only.
    cstExcludedRomFolders: TArray<string> = ['_retrobat_metadata_report'];
+   // Folders under roms\ that are not game systems at all.
+   // Compared in lower case against the folder name.
+   cstNonSystemFolders: TArray<string> = ['switchupdates'];
 
    cstBiosAlternativePaths: array[0..2] of TBiosAlternativePath =
       ( ( systemKey: 'neogeo'; fileName: 'neogeo.zip'; altRelPath: 'roms\neogeo\neogeo.zip' ),

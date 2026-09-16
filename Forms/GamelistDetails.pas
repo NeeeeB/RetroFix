@@ -186,6 +186,7 @@ uses
    GamelistParser,
    GamelistChecker,
    ConfirmDelete,
+   BackupManager,
    Tools;
 
 {$R *.dfm}
@@ -1057,14 +1058,17 @@ begin
                                        _hasPs3Games, _deleteOrphans, _deleteRpcs3Data ) ) then
       Exit;
 
-   Screen.Cursor:= crHourGlass;
-
    var _rpcs3Map: TDictionary<string, string>:= nil;
    if ( _hasPs3Games ) and ( _deleteRpcs3Data ) then
       _rpcs3Map:= buildRpcs3TitleMap( FSettings.retrobatPath );
 
    var _refsByResult:= TDictionary<TGamelistResult, TList<TGameEntryRef>>.Create;
    var _affectedResults:= TList<TGamelistResult>.Create;
+   var _mediasByResult:= TDictionary<TGamelistResult, TArray<string>>.Create;
+   var _backupRoot:= FSettings.lastBackupPath;
+   var _session:= '';
+   var _choice:= bcNoBackup;
+   var _failed: TArray<string>;
    try
       _node:= vstMissingRoms.GetFirstSelected;
       while ( _node <> nil ) do begin
@@ -1080,26 +1084,58 @@ begin
          _node:= vstMissingRoms.GetNextSelected( _node );
       end;
 
+      // --- Pass 1: collect everything that will be destroyed ---------------
+      var _fileCount:= _affectedResults.Count;   // one gamelist.xml per system
       for var _r in _affectedResults do begin
-         var _refs:= _refsByResult[_r];
-         var _romPaths: TArray<string>;
-         for var _ref in _refs do
-            _romPaths:= _romPaths + [_ref.romPath];
-         removeGamesFromGamelist( _r.romDir, _romPaths );
-
-         // Collect medias declared by the removed games, BEFORE _r.games is rebuilt
-         var _mediasToDelete: TArray<string>;
+         var _medias: TArray<string>;
          if ( _deleteOrphans ) then begin
             for var _g in _r.games do begin
-               for var _p in _romPaths do begin
-                  if ( _g.romPath = _p ) then begin
+               for var _ref in _refsByResult[_r] do begin
+                  if ( _g.romPath = _ref.romPath ) then begin
                      for var _m in _g.medias do
-                        _mediasToDelete:= _mediasToDelete + [_m.path];
+                        if ( TFile.Exists( _m.path ) ) and
+                           ( _m.path.StartsWith( IncludeTrailingPathDelimiter( _r.romDir ), True ) ) then
+                           _medias:= _medias + [_m.path];
                      Break;
                   end;
                end;
             end;
          end;
+         _mediasByResult.Add( _r, _medias );
+         Inc( _fileCount, Length( _medias ) );
+      end;
+
+      _choice:= askBackup( _fileCount,
+                           TPath.Combine( FSettings.retrobatPath, cstRomsFolder ),
+                           _backupRoot );
+      if ( _choice = bcCancel ) then Exit;
+      if ( _choice = bcBackup ) then begin
+         FSettings.lastBackupPath:= _backupRoot;
+         _session:= newBackupSession;
+      end;
+
+      Screen.Cursor:= crHourGlass;
+
+      // --- Pass 2: execute -------------------------------------------------
+      for var _r in _affectedResults do begin
+         var _refs:= _refsByResult[_r];
+         var _romPaths: TArray<string>;
+         for var _ref in _refs do
+            _romPaths:= _romPaths + [_ref.romPath];
+
+         if ( _choice = bcBackup ) then begin
+            var _glPath:= TPath.Combine( _r.romDir, cstGamelistFile );
+            if ( TFile.Exists( _glPath ) ) then begin
+               var _err: string;
+               if ( not backupCopy( FSettings.retrobatPath, _glPath,
+                                    _backupRoot, _session, _err ) ) then begin
+                  _failed:= _failed + [_r.systemName + '\' + cstGamelistFile + ' - ' + _err];
+                  Continue;
+               end;
+            end;
+         end;
+
+         removeGamesFromGamelist( _r.romDir, _romPaths );
 
          var _gamesList:= TList<TGameEntry>.Create;
          try
@@ -1138,11 +1174,15 @@ begin
          end;
 
          if ( _deleteOrphans ) then begin
-            for var _p in _mediasToDelete do begin
+            for var _p in _mediasByResult[_r] do begin
                if ( not TFile.Exists( _p ) ) then Continue;
-               // never delete outside the system folder (shared media via ../)
-               if ( not _p.StartsWith( IncludeTrailingPathDelimiter( _r.romDir ), True ) ) then Continue;
-               TFile.Delete( _p );
+               if ( _choice = bcBackup ) then begin
+                  var _err: string;
+                  if ( not backupMove( FSettings.retrobatPath, _p,
+                                       _backupRoot, _session, _err ) ) then
+                     _failed:= _failed + [TPath.GetFileName( _p ) + ' - ' + _err];
+               end else
+                  TFile.Delete( _p );
             end;
          end;
 
@@ -1181,6 +1221,7 @@ begin
          _list.Free;
       _refsByResult.Free;
       _affectedResults.Free;
+      _mediasByResult.Free;
       Screen.Cursor:= crDefault;
    end;
 
@@ -1188,15 +1229,45 @@ begin
    updateStats( getFilteredResults );
    if ( Assigned( FOnSummaryUpdate ) ) then
       FOnSummaryUpdate( Self );
+
+   if ( Length( _failed ) > 0 ) then
+      MessageDlg( Format( rstBackupFailed,
+                          [Length( _failed ), string.Join( sLineBreak, _failed )] ),
+                  mtWarning, [mbOK], 0 );
 end;
 
 procedure TfrmGamelistDetails.mniDeleteOrphanClick( Sender: TObject );
 begin
    if ( vstOrphans.SelectedCount = 0 ) then Exit;
-   if ( MessageDlg( Format( rstDeleteOrphans, [vstOrphans.SelectedCount] ),
+
+   // Pass 1: collect the files that will actually be destroyed
+   var _files: TArray<string>;
+   var _n0:= vstOrphans.GetFirstSelected;
+   while ( _n0 <> nil ) do begin
+      var _d0:= PGamelistNodeData( vstOrphans.GetNodeData( _n0 ) );
+      if ( _d0 <> nil ) and ( not _d0.isGroup ) and ( _d0.ref <> nil ) and
+         ( TFile.Exists( _d0.ref.mediaPath ) ) then
+         _files:= _files + [_d0.ref.mediaPath];
+      _n0:= vstOrphans.GetNextSelected( _n0 );
+   end;
+   if ( Length( _files ) = 0 ) then Exit;
+
+   if ( MessageDlg( Format( rstDeleteOrphans, [Length( _files )] ),
                     mtConfirmation, [mbYes, mbNo], 0 ) = mrNo ) then
       Exit;
 
+   var _backupRoot:= FSettings.lastBackupPath;
+   var _choice:= askBackup( Length( _files ),
+                            TPath.Combine( FSettings.retrobatPath, cstRomsFolder ),
+                            _backupRoot );
+   if ( _choice = bcCancel ) then Exit;
+   var _session:= '';
+   if ( _choice = bcBackup ) then begin
+      FSettings.lastBackupPath:= _backupRoot;
+      _session:= newBackupSession;
+   end;
+
+   var _failed: TArray<string>;
    Screen.Cursor:= crHourGlass;
    try
       var _node:= vstOrphans.GetFirstSelected;
@@ -1206,18 +1277,29 @@ begin
          if ( _data <> nil ) and ( not _data.isGroup ) and ( _data.ref <> nil ) then begin
             var _ref:= _data.ref;
             if ( TFile.Exists( _ref.mediaPath ) ) then begin
-               TFile.Delete( _ref.mediaPath );
-               var _list:= TList<string>.Create;
-               try
-                  for var s in _ref.gamelistResult.orphanMedias do begin
-                     if ( s <> _ref.mediaPath ) then
-                        _list.Add( s );
+               var _done:= True;
+               if ( _choice = bcBackup ) then begin
+                  var _err: string;
+                  _done:= backupMove( FSettings.retrobatPath, _ref.mediaPath,
+                                      _backupRoot, _session, _err );
+                  if ( not _done ) then
+                     _failed:= _failed + [TPath.GetFileName( _ref.mediaPath ) + ' - ' + _err];
+               end else
+                  TFile.Delete( _ref.mediaPath );
+
+               if ( _done ) then begin
+                  var _list:= TList<string>.Create;
+                  try
+                     for var s in _ref.gamelistResult.orphanMedias do begin
+                        if ( s <> _ref.mediaPath ) then
+                           _list.Add( s );
+                     end;
+                     _ref.gamelistResult.orphanMedias:= _list.ToArray;
+                  finally
+                     _list.Free;
                   end;
-                  _ref.gamelistResult.orphanMedias:= _list.ToArray;
-               finally
-                  _list.Free;
+                  vstOrphans.DeleteNode( _node );
                end;
-               vstOrphans.DeleteNode( _node );
             end;
          end;
          _node:= _next;
@@ -1236,6 +1318,11 @@ begin
    tbsOrphans.Caption:= Format( rstOrphansNb, [_count] );
    if Assigned( FOnSummaryUpdate ) then
       FOnSummaryUpdate( Self );
+
+   if ( Length( _failed ) > 0 ) then
+      MessageDlg( Format( rstBackupFailed,
+                          [Length( _failed ), string.Join( sLineBreak, _failed )] ),
+                  mtWarning, [mbOK], 0 );
 end;
 
 procedure TfrmGamelistDetails.mniOpenFolderClick( Sender: TObject );

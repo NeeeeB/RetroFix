@@ -123,6 +123,7 @@ type
       scrapeLogoSrc : string;
       scrapeThumbSrc: string;
       apiEnabled    : Boolean;
+      lastBackupPath: string;
    end;
 
    TSystemTile = class( TPanel )

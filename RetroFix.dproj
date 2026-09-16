@@ -4,7 +4,7 @@
         <ProjectVersion>20.3</ProjectVersion>
         <FrameworkType>VCL</FrameworkType>
         <Base>True</Base>
-        <Config Condition="'$(Config)'==''">Release</Config>
+        <Config Condition="'$(Config)'==''">Debug</Config>
         <Platform Condition="'$(Platform)'==''">Win64</Platform>
         <ProjectName Condition="'$(ProjectName)'==''">RetroFix</ProjectName>
         <TargetedPlatforms>3</TargetedPlatforms>
@@ -116,6 +116,7 @@
         <AppDPIAwarenessMode>PerMonitorV2</AppDPIAwarenessMode>
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
         <VerInfo_Locale>1033</VerInfo_Locale>
+        <Icon_MainIcon>RetroFix.ico</Icon_MainIcon>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_2)'!=''">
         <DCC_LocalDebugSymbols>false</DCC_LocalDebugSymbols>
@@ -131,6 +132,7 @@
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
         <VerInfo_Locale>1033</VerInfo_Locale>
         <Icon_MainIcon>RetroFix.ico</Icon_MainIcon>
+        <DCC_AssertionsAtRuntime>false</DCC_AssertionsAtRuntime>
     </PropertyGroup>
     <ItemGroup>
         <DelphiCompile Include="$(MainSource)">
@@ -179,6 +181,7 @@
         </DCCReference>
         <DCCReference Include="Shared\Rpcs3Utils.pas"/>
         <DCCReference Include="Shared\Tools.pas"/>
+        <DCCReference Include="Logic\BackupManager.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>
@@ -200,12 +203,13 @@
                     <Source Name="MainSource">RetroFix.dpr</Source>
                 </Source>
                 <Excluded_Packages>
-                    <Excluded_Packages Name="O:\Sources\desktop_client\bind\GLScene_DT290.bpl">GLScene OpenGL 3D library</Excluded_Packages>
+                    <Excluded_Packages Name="O:\Sources\desktop_client\bind\dclsbridge290.bpl">Devart SecureBridge Components</Excluded_Packages>
+                    <Excluded_Packages Name="O:\Sources\desktop_client\bind\DclTee9290.bpl">TeeChart Standard 2016 Components</Excluded_Packages>
+                    <Excluded_Packages Name="O:\Sources\desktop_client\bind\GLScene_DT290.bpl">GLScene Engine</Excluded_Packages>
                     <Excluded_Packages Name="O:\Sources\desktop_client\bind\html_compDT290.bpl">(sans titre)</Excluded_Packages>
                     <Excluded_Packages Name="O:\Sources\desktop_client\bind\madExceptIdeDT290.bpl">madExceptIde 1.1.0  -  www.madshi.net</Excluded_Packages>
                     <Excluded_Packages Name="O:\Sources\desktop_client\bind\madExceptVclDT290.bpl">madExceptVcl 2.1.0  -  www.madshi.net</Excluded_Packages>
                     <Excluded_Packages Name="O:\Sources\desktop_client\bind\madExceptWizardDT290.bpl">madExceptWizard 3.1.8  -  www.madshi.net</Excluded_Packages>
-                    <Excluded_Packages Name="O:\Sources\desktop_client\bind\madExceptWizard_.bpl">madExceptWizard 3.1.8  -  www.madshi.net</Excluded_Packages>
                     <Excluded_Packages Name="O:\Sources\desktop_client\bind\OtherComponentsDT290.bpl">(sans titre)</Excluded_Packages>
                     <Excluded_Packages Name="O:\Sources\desktop_client\bind\QR506Design290.bpl">QuickReport 5.06 Components</Excluded_Packages>
                     <Excluded_Packages Name="O:\Sources\desktop_client\bind\RaizeComponentsVclDb_Design290.bpl">(sans titre)</Excluded_Packages>

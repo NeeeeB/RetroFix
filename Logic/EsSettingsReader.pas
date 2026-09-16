@@ -13,7 +13,8 @@ implementation
 uses
    System.SysUtils, System.IOUtils,
    Neslib.Xml,
-   Constantes;
+   Constantes,
+   Tools;
 
 function readEsSettings( const aRetrobatPath: string;
                          aSettings: TSettings ): Boolean;
@@ -28,7 +29,14 @@ begin
       Exit;
 
    var _doc:= TXmlDocument.Create;
-   _doc.Load( _path );
+   try
+      _doc.Load( loadXmlBytes( _path ) );
+   except
+      on E: Exception do begin
+         logError( cstEsSettingsFile, _path, E );
+         Exit;
+      end;
+   end;
    var _root:= _doc.DocumentElement;
    if ( _root.IsEmpty ) then
       Exit;

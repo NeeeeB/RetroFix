@@ -91,11 +91,11 @@ begin
 
       var _doc: IXmlDocument:= TXmlDocument.Create;
       try
-         _doc.Load( _gamelistPath );
+         _doc.Load( loadXmlBytes( _gamelistPath ) );
       except
          on E: Exception do begin
             var _cleanXml, _details: string;
-            if ( not sanitizeXml( TFile.ReadAllText( _gamelistPath, TEncoding.UTF8 ),
+            if ( not sanitizeXml( TEncoding.UTF8.GetString( loadXmlBytes( _gamelistPath ) ),
                                   _cleanXml, _details ) ) then
                raise;
 
@@ -199,7 +199,7 @@ begin
 
    var _doc:= TXmlDocument.Create;
    if ( TFile.Exists( _gamelistPath ) ) then
-      _doc.Load( _gamelistPath )
+      _doc.Load( loadXmlBytes( _gamelistPath ) )
    else
       _doc.Root.AddElement( cstXmlGameList );
 
@@ -284,7 +284,7 @@ begin
       end;
 
       var _doc:= TXmlDocument.Create;
-      _doc.Load( _gamelistPath );
+      _doc.Load( loadXmlBytes( _gamelistPath ) );
       var _root:= _doc.DocumentElement;
       if ( _root.IsEmpty ) then Exit;
 

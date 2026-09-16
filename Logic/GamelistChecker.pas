@@ -105,7 +105,7 @@ function checkGamelists( const aRomsDir: string;
             if ( IndexStr( _name, aBiosFiles ) >= 0 ) then Continue;
             aList.Add( _f );
          end;
-                  for var _subDir in TDirectory.GetDirectories( aCurrentDir ) do begin
+         for var _subDir in TDirectory.GetDirectories( aCurrentDir ) do begin
             var _dirName:= LowerCase( TPath.GetFileName( _subDir ) );
             if ( _dirName = LowerCase( cstImages ) ) or
                ( _dirName = LowerCase( cstVideos ) ) or
@@ -156,6 +156,9 @@ begin
    for var ii:= 0 to Pred( _total ) do begin
       var _systemDir:= normalizePath( _systemDirs[ii] );
       var _systemName:= TPath.GetFileName( _systemDir );
+      if ( IndexStr( LowerCase( _systemName ), cstNonSystemFolders ) >= 0 ) then
+         Continue;
+
       var _gamelistPath:= TPath.Combine( _systemDir, cstGamelistFile );
       var _result: TGamelistResult:= nil;
       try
@@ -234,7 +237,7 @@ begin
             _referencedROMs.Free;
          end;
 
-                  // Check missing medias
+         // Check missing medias
          var _missingMedias:= TList<string>.Create;
          try
             for var _game in _result.games do
